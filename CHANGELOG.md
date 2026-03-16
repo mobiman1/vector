@@ -167,7 +167,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - Improved onboarding UX: installer now suggests `/vector:new-project` instead of `/vector:help`
-- Updated Discord invite to vanity URL (discord.gg/gsd)
+- Updated Discord invite to vanity URL (discord.gg/vector)
 - Compressed Nyquist validation layer to align with Vector meta-prompt conventions
 - Requirements propagation now includes `phase_req_ids` from ROADMAP to workflow agents
 - Debug sessions require human verification before resolution

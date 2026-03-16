@@ -4,7 +4,7 @@
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
-Instead, please report them via email to: **security@gsd.build** (or DM @glittercowboy on Discord/Twitter if email bounces)
+Instead, please report them via email to: **security@prolifix.com** (or DM @mobiman on Discord/Twitter if email bounces)
 
 Include:
 - Description of the vulnerability

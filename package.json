@@ -1,6 +1,6 @@
 {
-  "name": "vector",
-  "version": "1.24.0",
+  "name": "@mobiman/vector",
+  "version": "1.1.0",
   "description": "A meta-prompting, context engineering, and spec-driven development system for iOS development",
   "bin": {
     "vector": "bin/install.cjs"
@@ -29,11 +29,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/glittercowboy/core.git"
+    "url": "git+https://github.com/mobiman/core.git"
   },
-  "homepage": "https://github.com/glittercowboy/core",
+  "homepage": "https://github.com/mobiman/core",
   "bugs": {
-    "url": "https://github.com/glittercowboy/core/issues"
+    "url": "https://github.com/mobiman/core/issues"
   },
   "engines": {
     "node": ">=16.7.0"
