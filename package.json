@@ -39,10 +39,15 @@
     "node": ">=16.7.0"
   },
   "devDependencies": {
+    "@types/node": "^20.19.37",
     "c8": "^11.0.0",
-    "esbuild": "^0.24.0"
+    "esbuild": "^0.24.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   },
   "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
     "build:hooks": "node scripts/build-hooks.js",
     "prepublishOnly": "npm run build:hooks",
     "test": "node scripts/run-tests.cjs",
