@@ -3,7 +3,7 @@
   "version": "1.24.0",
   "description": "A meta-prompting, context engineering, and spec-driven development system for iOS development",
   "bin": {
-    "vector": "bin/install.js"
+    "vector": "bin/install.cjs"
   },
   "files": [
     "bin",
@@ -48,9 +48,8 @@
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "build:hooks": "node scripts/build-hooks.js",
-    "prepublishOnly": "npm run build:hooks",
-    "test": "node scripts/run-tests.cjs",
-    "test:coverage": "c8 --check-coverage --lines 70 --reporter text --include 'core/bin/lib/*.cjs' --exclude 'tests/**' --all node scripts/run-tests.cjs"
+    "prepublishOnly": "npm run build",
+    "test": "tsc --project tsconfig.json && node scripts/run-tests.cjs",
+    "test:coverage": "tsc --project tsconfig.json && c8 --check-coverage --lines 70 --reporter text --include 'core/bin/lib/*.cjs' --exclude 'tests/**' --all node scripts/run-tests.cjs"
   }
 }

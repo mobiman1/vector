@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const readline = require('readline');
-const crypto = require('crypto');
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import readline from 'readline';
+import crypto from 'crypto';
+import pkg from '../package.json';
+
+type Runtime = 'claude' | 'opencode' | 'gemini' | 'codex' | 'copilot' | 'antigravity';
+type Attribution = string | null | undefined;
 
 // Colors
 const cyan = '\x1b[36m';
@@ -51,8 +55,7 @@ const claudeToCopilotTools = {
   SlashCommand: 'skill',
 };
 
-// Get version from package.json
-const pkg = require('../package.json');
+// pkg imported at top of file
 
 // Parse args
 const args = process.argv.slice(2);
@@ -69,7 +72,7 @@ const hasAll = args.includes('--all');
 const hasUninstall = args.includes('--uninstall') || args.includes('-u');
 
 // Runtime selection - can be set by flags or interactive prompt
-let selectedRuntimes = [];
+let selectedRuntimes: Runtime[] = [];
 if (hasAll) {
   selectedRuntimes = ['claude', 'opencode', 'gemini', 'codex', 'copilot', 'antigravity'];
 } else if (hasBoth) {
@@ -118,7 +121,7 @@ Then re-run: npx vector@latest
 }
 
 // Helper to get directory name for a runtime (used for local/project installs)
-function getDirName(runtime) {
+function getDirName(runtime: Runtime): string {
   if (runtime === 'copilot') return '.github';
   if (runtime === 'opencode') return '.opencode';
   if (runtime === 'gemini') return '.gemini';
@@ -133,7 +136,7 @@ function getDirName(runtime) {
  * @param {string} runtime - 'claude', 'opencode', 'gemini', 'codex', or 'copilot'
  * @param {boolean} isGlobal - Whether this is a global install
  */
-function getConfigDirFromHome(runtime, isGlobal) {
+function getConfigDirFromHome(runtime: Runtime, isGlobal: boolean): string {
   if (!isGlobal) {
     // Local installs use the same dir name pattern
     return `'${getDirName(runtime)}'`;
@@ -184,7 +187,7 @@ function getOpencodeGlobalDir() {
  * @param {string} runtime - 'claude', 'opencode', 'gemini', 'codex', or 'copilot'
  * @param {string|null} explicitDir - Explicit directory from --config-dir flag
  */
-function getGlobalDir(runtime, explicitDir = null) {
+function getGlobalDir(runtime: Runtime, explicitDir: string | null = null): string {
   if (runtime === 'opencode') {
     // For OpenCode, --config-dir overrides env vars
     if (explicitDir) {
@@ -302,7 +305,7 @@ if (hasHelp) {
 /**
  * Expand ~ to home directory (shell doesn't expand in env vars passed to node)
  */
-function expandTilde(filePath) {
+function expandTilde(filePath: string): string {
   if (filePath && filePath.startsWith('~/')) {
     return path.join(os.homedir(), filePath.slice(2));
   }
@@ -313,7 +316,7 @@ function expandTilde(filePath) {
  * Build a hook command path using forward slashes for cross-platform compatibility.
  * On Windows, $HOME is not expanded by cmd.exe/PowerShell, so we use the actual path.
  */
-function buildHookCommand(configDir, hookName) {
+function buildHookCommand(configDir: string, hookName: string): string {
   // Use forward slashes for Node.js compatibility on all platforms
   const hooksPath = configDir.replace(/\\/g, '/') + '/hooks/' + hookName;
   return `node "${hooksPath}"`;
@@ -322,7 +325,7 @@ function buildHookCommand(configDir, hookName) {
 /**
  * Resolve the opencode config file path, preferring .jsonc if it exists.
  */
-function resolveOpencodeConfigPath(configDir) {
+function resolveOpencodeConfigPath(configDir: string): string {
   const jsoncPath = path.join(configDir, 'opencode.jsonc');
   if (fs.existsSync(jsoncPath)) {
     return jsoncPath;
@@ -333,7 +336,7 @@ function resolveOpencodeConfigPath(configDir) {
 /**
  * Read and parse settings.json, returning empty object if it doesn't exist
  */
-function readSettings(settingsPath) {
+function readSettings(settingsPath: string): Record<string, unknown> {
   if (fs.existsSync(settingsPath)) {
     try {
       return JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
@@ -347,7 +350,7 @@ function readSettings(settingsPath) {
 /**
  * Write settings.json with proper formatting
  */
-function writeSettings(settingsPath, settings) {
+function writeSettings(settingsPath: string, settings: Record<string, unknown>): void {
   fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
 }
 
@@ -359,7 +362,7 @@ const attributionCache = new Map();
  * @param {string} runtime - 'claude', 'opencode', 'gemini', 'codex', or 'copilot'
  * @returns {null|undefined|string} null = remove, undefined = keep default, string = custom
  */
-function getCommitAttribution(runtime) {
+function getCommitAttribution(runtime: Runtime): Attribution {
   // Return cached value if available
   if (attributionCache.has(runtime)) {
     return attributionCache.get(runtime);
@@ -368,27 +371,29 @@ function getCommitAttribution(runtime) {
   let result;
 
   if (runtime === 'opencode') {
-    const config = readSettings(resolveOpencodeConfigPath(getGlobalDir('opencode', null)));
+    const config = readSettings(resolveOpencodeConfigPath(getGlobalDir('opencode', null as string | null)));
     result = config.disable_ai_attribution === true ? null : undefined;
   } else if (runtime === 'gemini') {
     // Gemini: check gemini settings.json for attribution config
     const settings = readSettings(path.join(getGlobalDir('gemini', explicitConfigDir), 'settings.json'));
-    if (!settings.attribution || settings.attribution.commit === undefined) {
+    const attribution = settings.attribution as Record<string, unknown> | undefined;
+    if (!attribution || attribution.commit === undefined) {
       result = undefined;
-    } else if (settings.attribution.commit === '') {
+    } else if (attribution.commit === '') {
       result = null;
     } else {
-      result = settings.attribution.commit;
+      result = attribution.commit as string;
     }
   } else if (runtime === 'claude') {
     // Claude Code
     const settings = readSettings(path.join(getGlobalDir('claude', explicitConfigDir), 'settings.json'));
-    if (!settings.attribution || settings.attribution.commit === undefined) {
+    const attribution = settings.attribution as Record<string, unknown> | undefined;
+    if (!attribution || attribution.commit === undefined) {
       result = undefined;
-    } else if (settings.attribution.commit === '') {
+    } else if (attribution.commit === '') {
       result = null;
     } else {
-      result = settings.attribution.commit;
+      result = attribution.commit as string;
     }
   } else {
     // Codex and Copilot currently have no attribution setting equivalent
@@ -406,7 +411,7 @@ function getCommitAttribution(runtime) {
  * @param {null|undefined|string} attribution - null=remove, undefined=keep, string=replace
  * @returns {string} Processed content
  */
-function processAttribution(content, attribution) {
+function processAttribution(content: string, attribution: Attribution): string {
   if (attribution === null) {
     // Remove Co-Authored-By lines and the preceding blank line
     return content.replace(/(\r?\n){2}Co-Authored-By:.*$/gim, '');
@@ -472,10 +477,10 @@ const claudeToGeminiTools = {
  * - Applies special mappings (AskUserQuestion -> question, etc.)
  * - Converts to lowercase (except MCP tools which keep their format)
  */
-function convertToolName(claudeTool) {
+function convertToolName(claudeTool: string): string {
   // Check for special mapping first
-  if (claudeToOpencodeTools[claudeTool]) {
-    return claudeToOpencodeTools[claudeTool];
+  if ((claudeToOpencodeTools as Record<string, string>)[claudeTool]) {
+    return (claudeToOpencodeTools as Record<string, string>)[claudeTool];
   }
   // MCP tools (mcp__*) keep their format
   if (claudeTool.startsWith('mcp__')) {
@@ -492,7 +497,7 @@ function convertToolName(claudeTool) {
  * - Filters out Task — agents are auto-registered as tools in Gemini
  * @returns {string|null} Gemini tool name, or null if tool should be excluded
  */
-function convertGeminiToolName(claudeTool) {
+function convertGeminiToolName(claudeTool: string): string | null {
   // MCP tools: exclude — auto-discovered from mcpServers config at runtime
   if (claudeTool.startsWith('mcp__')) {
     return null;
@@ -502,8 +507,8 @@ function convertGeminiToolName(claudeTool) {
     return null;
   }
   // Check for explicit mapping
-  if (claudeToGeminiTools[claudeTool]) {
-    return claudeToGeminiTools[claudeTool];
+  if ((claudeToGeminiTools as Record<string, string>)[claudeTool]) {
+    return (claudeToGeminiTools as Record<string, string>)[claudeTool];
   }
   // Default: lowercase
   return claudeTool.toLowerCase();
@@ -515,14 +520,14 @@ function convertGeminiToolName(claudeTool) {
  * - Handles mcp__context7__* prefix → io.github.upstash/context7/*
  * - Falls back to lowercase for unknown tools
  */
-function convertCopilotToolName(claudeTool) {
+function convertCopilotToolName(claudeTool: string): string {
   // mcp__context7__* wildcard → io.github.upstash/context7/*
   if (claudeTool.startsWith('mcp__context7__')) {
     return 'io.github.upstash/context7/' + claudeTool.slice('mcp__context7__'.length);
   }
   // Check explicit mapping
-  if (claudeToCopilotTools[claudeTool]) {
-    return claudeToCopilotTools[claudeTool];
+  if ((claudeToCopilotTools as Record<string, string>)[claudeTool]) {
+    return (claudeToCopilotTools as Record<string, string>)[claudeTool];
   }
   // Default: lowercase
   return claudeTool.toLowerCase();
@@ -537,7 +542,7 @@ function convertCopilotToolName(claudeTool) {
  * @param {string} content - Source content to convert
  * @param {boolean} [isGlobal=false] - Whether this is a global install
  */
-function convertClaudeToCopilotContent(content, isGlobal = false) {
+function convertClaudeToCopilotContent(content: string, isGlobal = false) {
   let c = content;
   // CONV-06: Path replacement — most specific first to avoid substring matches
   if (isGlobal) {
@@ -559,7 +564,7 @@ function convertClaudeToCopilotContent(content, isGlobal = false) {
  * Transforms frontmatter only — body passes through with CONV-06/07 applied.
  * Skills keep original tool names (no mapping) per CONTEXT.md decision.
  */
-function convertClaudeCommandToCopilotSkill(content, skillName, isGlobal = false) {
+function convertClaudeCommandToCopilotSkill(content: string, skillName: string, isGlobal = false) {
   const converted = convertClaudeToCopilotContent(content, isGlobal);
   const { frontmatter, body } = extractFrontmatterAndBody(converted);
   if (!frontmatter) return converted;
@@ -574,7 +579,7 @@ function convertClaudeCommandToCopilotSkill(content, skillName, isGlobal = false
   if (toolsMatch) {
     const tools = toolsMatch[1].match(/^\s+-\s+(.+)/gm);
     if (tools) {
-      toolsLine = tools.map(t => t.replace(/^\s+-\s+/, '').trim()).join(', ');
+      toolsLine = tools.map((t: string) => t.replace(/^\s+-\s+/, '').trim()).join(', ');
     }
   }
 
@@ -593,7 +598,7 @@ function convertClaudeCommandToCopilotSkill(content, skillName, isGlobal = false
  * Applies tool mapping + deduplication, formats tools as JSON array.
  * CONV-04: JSON array format. CONV-05: Tool name mapping.
  */
-function convertClaudeAgentToCopilotAgent(content, isGlobal = false) {
+function convertClaudeAgentToCopilotAgent(content: string, isGlobal = false) {
   const converted = convertClaudeToCopilotContent(content, isGlobal);
   const { frontmatter, body } = extractFrontmatterAndBody(converted);
   if (!frontmatter) return converted;
@@ -604,8 +609,8 @@ function convertClaudeAgentToCopilotAgent(content, isGlobal = false) {
   const toolsRaw = extractFrontmatterField(frontmatter, 'tools') || '';
 
   // CONV-04 + CONV-05: Map tools, deduplicate, format as JSON array
-  const claudeTools = toolsRaw.split(',').map(t => t.trim()).filter(Boolean);
-  const mappedTools = claudeTools.map(t => convertCopilotToolName(t));
+  const claudeTools = toolsRaw.split(',').map((t: string) => t.trim()).filter(Boolean);
+  const mappedTools = claudeTools.map((t: string) => convertCopilotToolName(t));
   const uniqueTools = [...new Set(mappedTools)];
   const toolsArray = uniqueTools.length > 0
     ? "['" + uniqueTools.join("', '") + "']"
@@ -628,7 +633,7 @@ function convertClaudeAgentToCopilotAgent(content, isGlobal = false) {
  * @param {string} content - Source content to convert
  * @param {boolean} [isGlobal=false] - Whether this is a global install
  */
-function convertClaudeToAntigravityContent(content, isGlobal = false) {
+function convertClaudeToAntigravityContent(content: string, isGlobal = false) {
   let c = content;
   if (isGlobal) {
     c = c.replace(/\$HOME\/\.claude\//g, '$HOME/.gemini/antigravity/');
@@ -649,7 +654,7 @@ function convertClaudeToAntigravityContent(content, isGlobal = false) {
  * Transforms frontmatter to minimal name + description only.
  * Body passes through with path/command conversions applied.
  */
-function convertClaudeCommandToAntigravitySkill(content, skillName, isGlobal = false) {
+function convertClaudeCommandToAntigravitySkill(content: string, skillName: string, isGlobal = false) {
   const converted = convertClaudeToAntigravityContent(content, isGlobal);
   const { frontmatter, body } = extractFrontmatterAndBody(converted);
   if (!frontmatter) return converted;
@@ -665,7 +670,7 @@ function convertClaudeCommandToAntigravitySkill(content, skillName, isGlobal = f
  * Convert a Claude agent (.md) to an Antigravity agent.
  * Uses Gemini tool names since Antigravity runs on Gemini 3 backend.
  */
-function convertClaudeAgentToAntigravityAgent(content, isGlobal = false) {
+function convertClaudeAgentToAntigravityAgent(content: string, isGlobal = false) {
   const converted = convertClaudeToAntigravityContent(content, isGlobal);
   const { frontmatter, body } = extractFrontmatterAndBody(converted);
   if (!frontmatter) return converted;
@@ -676,8 +681,8 @@ function convertClaudeAgentToAntigravityAgent(content, isGlobal = false) {
   const toolsRaw = extractFrontmatterField(frontmatter, 'tools') || '';
 
   // Map tools to Gemini equivalents (reuse existing convertGeminiToolName)
-  const claudeTools = toolsRaw.split(',').map(t => t.trim()).filter(Boolean);
-  const mappedTools = claudeTools.map(t => convertGeminiToolName(t)).filter(Boolean);
+  const claudeTools = toolsRaw.split(',').map((t: string) => t.trim()).filter(Boolean);
+  const mappedTools = claudeTools.map((t: string) => convertGeminiToolName(t)).filter(Boolean);
 
   let fm = `---\nname: ${name}\ndescription: ${description}\ntools: ${mappedTools.join(', ')}\n`;
   if (color) fm += `color: ${color}\n`;
@@ -686,15 +691,15 @@ function convertClaudeAgentToAntigravityAgent(content, isGlobal = false) {
   return `${fm}\n${body}`;
 }
 
-function toSingleLine(value) {
+function toSingleLine(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
 
-function yamlQuote(value) {
+function yamlQuote(value: string): string {
   return JSON.stringify(value);
 }
 
-function extractFrontmatterAndBody(content) {
+function extractFrontmatterAndBody(content: string) {
   if (!content.startsWith('---')) {
     return { frontmatter: null, body: content };
   }
@@ -710,28 +715,28 @@ function extractFrontmatterAndBody(content) {
   };
 }
 
-function extractFrontmatterField(frontmatter, fieldName) {
+function extractFrontmatterField(frontmatter: string, fieldName: string) {
   const regex = new RegExp(`^${fieldName}:\\s*(.+)$`, 'm');
   const match = frontmatter.match(regex);
   if (!match) return null;
   return match[1].trim().replace(/^['"]|['"]$/g, '');
 }
 
-function convertSlashCommandsToCodexSkillMentions(content) {
-  let converted = content.replace(/\/vector:([a-z0-9-]+)/gi, (_, commandName) => {
+function convertSlashCommandsToCodexSkillMentions(content: string) {
+  let converted = content.replace(/\/vector:([a-z0-9-]+)/gi, (_: string, commandName: string) => {
     return `$vector-${String(commandName).toLowerCase()}`;
   });
   converted = converted.replace(/\/vector-help\b/g, '$vector-help');
   return converted;
 }
 
-function convertClaudeToCodexMarkdown(content) {
+function convertClaudeToCodexMarkdown(content: string) {
   let converted = convertSlashCommandsToCodexSkillMentions(content);
   converted = converted.replace(/\$ARGUMENTS\b/g, '{{VECTOR_ARGS}}');
   return converted;
 }
 
-function getCodexSkillAdapterHeader(skillName) {
+function getCodexSkillAdapterHeader(skillName: string) {
   const invocation = `$${skillName}`;
   return `<codex_skill_adapter>
 ## A. Skill Invocation
@@ -774,7 +779,7 @@ Result parsing:
 </codex_skill_adapter>`;
 }
 
-function convertClaudeCommandToCodexSkill(content, skillName) {
+function convertClaudeCommandToCodexSkill(content: string, skillName: string) {
   const converted = convertClaudeToCodexMarkdown(content);
   const { frontmatter, body } = extractFrontmatterAndBody(converted);
   let description = `Run Vector workflow ${skillName}.`;
@@ -796,7 +801,7 @@ function convertClaudeCommandToCodexSkill(content, skillName) {
  * Applies base markdown conversions, then adds a <codex_agent_role> header
  * and cleans up frontmatter (removes tools/color fields).
  */
-function convertClaudeAgentToCodexAgent(content) {
+function convertClaudeAgentToCodexAgent(content: string) {
   let converted = convertClaudeToCodexMarkdown(content);
 
   const { frontmatter, body } = extractFrontmatterAndBody(converted);
@@ -821,8 +826,8 @@ purpose: ${toSingleLine(description)}
  * Generate a per-agent .toml config file for Codex.
  * Sets sandbox_mode and developer_instructions from the agent markdown body.
  */
-function generateCodexAgentToml(agentName, agentContent) {
-  const sandboxMode = CODEX_AGENT_SANDBOX[agentName] || 'read-only';
+function generateCodexAgentToml(agentName: string, agentContent: string) {
+  const sandboxMode = (CODEX_AGENT_SANDBOX as Record<string, string>)[agentName] || 'read-only';
   const { body } = extractFrontmatterAndBody(agentContent);
   const instructions = body.trim();
 
@@ -841,7 +846,7 @@ function generateCodexAgentToml(agentName, agentContent) {
  * Generate the Vector config block for Codex config.toml.
  * @param {Array<{name: string, description: string}>} agents
  */
-function generateCodexConfigBlock(agents) {
+function generateCodexConfigBlock(agents: Array<{name: string, description: string}>) {
   const lines = [
     GSD_CODEX_MARKER,
     '',
@@ -861,7 +866,7 @@ function generateCodexConfigBlock(agents) {
  * Strip Vector sections from Codex config.toml content.
  * Returns cleaned content, or null if file would be empty.
  */
-function stripGsdFromCodexConfig(content) {
+function stripGsdFromCodexConfig(content: string) {
   const markerIndex = content.indexOf(GSD_CODEX_MARKER);
 
   if (markerIndex !== -1) {
@@ -901,7 +906,7 @@ function stripGsdFromCodexConfig(content) {
  * Merge Vector config block into an existing or new config.toml.
  * Three cases: new file, existing with Vector marker, existing without marker.
  */
-function mergeCodexConfig(configPath, vectorBlock) {
+function mergeCodexConfig(configPath: string, vectorBlock: string) {
   // Case 1: No config.toml — create fresh
   if (!fs.existsSync(configPath)) {
     fs.writeFileSync(configPath, vectorBlock + '\n');
@@ -940,7 +945,7 @@ function mergeCodexConfig(configPath, vectorBlock) {
  * @param {string} filePath - Full path to copilot-instructions.md
  * @param {string} vectorContent - Template content (without markers)
  */
-function mergeCopilotInstructions(filePath, vectorContent) {
+function mergeCopilotInstructions(filePath: string, vectorContent: string) {
   const vectorBlock = GSD_COPILOT_INSTRUCTIONS_MARKER + '\n' +
     vectorContent.trim() + '\n' +
     GSD_COPILOT_INSTRUCTIONS_CLOSE_MARKER;
@@ -979,7 +984,7 @@ function mergeCopilotInstructions(filePath, vectorContent) {
  * @param {string} content - File content
  * @returns {string|null} - Cleaned content or null if empty
  */
-function stripGsdFromCopilotInstructions(content) {
+function stripGsdFromCopilotInstructions(content: string) {
   const openIndex = content.indexOf(GSD_COPILOT_INSTRUCTIONS_MARKER);
   const closeIndex = content.indexOf(GSD_COPILOT_INSTRUCTIONS_CLOSE_MARKER);
 
@@ -999,7 +1004,7 @@ function stripGsdFromCopilotInstructions(content) {
  * Generate config.toml and per-agent .toml files for Codex.
  * Reads agent .md files from source, extracts metadata, writes .toml configs.
  */
-function installCodexConfig(targetDir, agentsSrc) {
+function installCodexConfig(targetDir: string, agentsSrc: string) {
   const configPath = path.join(targetDir, 'config.toml');
   const agentsTomlDir = path.join(targetDir, 'agents');
   fs.mkdirSync(agentsTomlDir, { recursive: true });
@@ -1016,8 +1021,8 @@ function installCodexConfig(targetDir, agentsSrc) {
     content = content.replace(/~\/\.claude\/core\//g, codexGsdPath);
     content = content.replace(/\$HOME\/\.claude\/core\//g, codexGsdPath);
     const { frontmatter } = extractFrontmatterAndBody(content);
-    const name = extractFrontmatterField(frontmatter, 'name') || file.replace('.md', '');
-    const description = extractFrontmatterField(frontmatter, 'description') || '';
+    const name = (frontmatter ? extractFrontmatterField(frontmatter, 'name') : null) || file.replace('.md', '');
+    const description = (frontmatter ? extractFrontmatterField(frontmatter, 'description') : null) || '';
 
     agents.push({ name, description: toSingleLine(description) });
 
@@ -1036,7 +1041,7 @@ function installCodexConfig(targetDir, agentsSrc) {
  * Terminals don't support subscript — Gemini renders these as raw HTML.
  * Converts <sub>text</sub> to italic *(text)* for readable terminal output.
  */
-function stripSubTags(content) {
+function stripSubTags(content: string) {
   return content.replace(/<sub>(.*?)<\/sub>/g, '*($1)*');
 }
 
@@ -1050,7 +1055,7 @@ function stripSubTags(content) {
  * - skills: must be removed (causes validation error)
  * - mcp__* tools: must be excluded (auto-discovered at runtime)
  */
-function convertClaudeToGeminiAgent(content) {
+function convertClaudeToGeminiAgent(content: string) {
   if (!content.startsWith('---')) return content;
 
   const endIndex = content.indexOf('---', 3);
@@ -1085,7 +1090,7 @@ function convertClaudeToGeminiAgent(content) {
     if (trimmed.startsWith('tools:')) {
       const toolsValue = trimmed.substring(6).trim();
       if (toolsValue) {
-        const parsed = toolsValue.split(',').map(t => t.trim()).filter(t => t);
+        const parsed = toolsValue.split(',').map((t: string) => t.trim()).filter((t: string) => t);
         for (const t of parsed) {
           const mapped = convertGeminiToolName(t);
           if (mapped) tools.push(mapped);
@@ -1143,7 +1148,7 @@ function convertClaudeToGeminiAgent(content) {
   return `---\n${newFrontmatter}\n---${stripSubTags(escapedBody)}`;
 }
 
-function convertClaudeToOpencodeFrontmatter(content, { isAgent = false } = {}) {
+function convertClaudeToOpencodeFrontmatter(content: string, { isAgent = false } = {}) {
   // Replace tool name references in content (applies to all files)
   let convertedContent = content;
   convertedContent = convertedContent.replace(/\bAskUserQuestion\b/g, 'question');
@@ -1202,7 +1207,7 @@ function convertClaudeToOpencodeFrontmatter(content, { isAgent = false } = {}) {
       const toolsValue = trimmed.substring(6).trim();
       if (toolsValue) {
         // Parse comma-separated tools
-        const tools = toolsValue.split(',').map(t => t.trim()).filter(t => t);
+        const tools = toolsValue.split(',').map((t: string) => t.trim()).filter((t: string) => t);
         allowedTools.push(...tools);
       }
       continue;
@@ -1231,7 +1236,7 @@ function convertClaudeToOpencodeFrontmatter(content, { isAgent = false } = {}) {
     // Convert color names to hex for opencode (commands only; agents strip color above)
     if (trimmed.startsWith('color:')) {
       const colorValue = trimmed.substring(6).trim().toLowerCase();
-      const hexColor = colorNameToHex[colorValue];
+      const hexColor = (colorNameToHex as Record<string, string>)[colorValue];
       if (hexColor) {
         newLines.push(`color: "${hexColor}"`);
       } else if (colorValue.startsWith('#')) {
@@ -1287,7 +1292,7 @@ function convertClaudeToOpencodeFrontmatter(content, { isAgent = false } = {}) {
  * @param {string} content - Markdown file content with YAML frontmatter
  * @returns {string} - TOML content
  */
-function convertClaudeToGeminiToml(content) {
+function convertClaudeToGeminiToml(content: string) {
   // Check if content has frontmatter
   if (!content.startsWith('---')) {
     return `prompt = ${JSON.stringify(content)}\n`;
@@ -1334,7 +1339,7 @@ function convertClaudeToGeminiToml(content) {
  * @param {string} pathPrefix - Path prefix for file references
  * @param {string} runtime - Target runtime ('claude' or 'opencode')
  */
-function copyFlattenedCommands(srcDir, destDir, prefix, pathPrefix, runtime) {
+function copyFlattenedCommands(srcDir: string, destDir: string, prefix: string, pathPrefix: string, runtime: Runtime) {
   if (!fs.existsSync(srcDir)) {
     return;
   }
@@ -1382,7 +1387,7 @@ function copyFlattenedCommands(srcDir, destDir, prefix, pathPrefix, runtime) {
   }
 }
 
-function listCodexSkillNames(skillsDir, prefix = 'vector-') {
+function listCodexSkillNames(skillsDir: string, prefix = 'vector-') {
   if (!fs.existsSync(skillsDir)) return [];
   const entries = fs.readdirSync(skillsDir, { withFileTypes: true });
   return entries
@@ -1392,7 +1397,7 @@ function listCodexSkillNames(skillsDir, prefix = 'vector-') {
     .sort();
 }
 
-function copyCommandsAsCodexSkills(srcDir, skillsDir, prefix, pathPrefix, runtime) {
+function copyCommandsAsCodexSkills(srcDir: string, skillsDir: string, prefix: string, pathPrefix: string, runtime: Runtime) {
   if (!fs.existsSync(srcDir)) {
     return;
   }
@@ -1407,7 +1412,7 @@ function copyCommandsAsCodexSkills(srcDir, skillsDir, prefix, pathPrefix, runtim
     }
   }
 
-  function recurse(currentSrcDir, currentPrefix) {
+  function recurse(currentSrcDir: string, currentPrefix: string) {
     const entries = fs.readdirSync(currentSrcDir, { withFileTypes: true });
 
     for (const entry of entries) {
@@ -1449,7 +1454,7 @@ function copyCommandsAsCodexSkills(srcDir, skillsDir, prefix, pathPrefix, runtim
  * Copy Claude commands as Copilot skills — one folder per skill with SKILL.md.
  * Applies CONV-01 (structure), CONV-02 (allowed-tools), CONV-06 (paths), CONV-07 (command names).
  */
-function copyCommandsAsCopilotSkills(srcDir, skillsDir, prefix, isGlobal = false) {
+function copyCommandsAsCopilotSkills(srcDir: string, skillsDir: string, prefix: string, isGlobal = false) {
   if (!fs.existsSync(srcDir)) {
     return;
   }
@@ -1464,7 +1469,7 @@ function copyCommandsAsCopilotSkills(srcDir, skillsDir, prefix, isGlobal = false
     }
   }
 
-  function recurse(currentSrcDir, currentPrefix) {
+  function recurse(currentSrcDir: string, currentPrefix: string) {
     const entries = fs.readdirSync(currentSrcDir, { withFileTypes: true });
 
     for (const entry of entries) {
@@ -1503,7 +1508,7 @@ function copyCommandsAsCopilotSkills(srcDir, skillsDir, prefix, isGlobal = false
  * @param {string} prefix - Skill name prefix (e.g. 'vector')
  * @param {boolean} isGlobal - Whether this is a global install
  */
-function copyCommandsAsAntigravitySkills(srcDir, skillsDir, prefix, isGlobal = false) {
+function copyCommandsAsAntigravitySkills(srcDir: string, skillsDir: string, prefix: string, isGlobal = false) {
   if (!fs.existsSync(srcDir)) {
     return;
   }
@@ -1518,7 +1523,7 @@ function copyCommandsAsAntigravitySkills(srcDir, skillsDir, prefix, isGlobal = f
     }
   }
 
-  function recurse(currentSrcDir, currentPrefix) {
+  function recurse(currentSrcDir: string, currentPrefix: string) {
     const entries = fs.readdirSync(currentSrcDir, { withFileTypes: true });
 
     for (const entry of entries) {
@@ -1556,7 +1561,7 @@ function copyCommandsAsAntigravitySkills(srcDir, skillsDir, prefix, isGlobal = f
  * @param {string} pathPrefix - Path prefix for file references
  * @param {string} runtime - Target runtime ('claude', 'opencode', 'gemini', 'codex')
  */
-function copyWithPathReplacement(srcDir, destDir, pathPrefix, runtime, isCommand = false, isGlobal = false) {
+function copyWithPathReplacement(srcDir: string, destDir: string, pathPrefix: string, runtime: Runtime, isCommand = false, isGlobal = false) {
   const isOpencode = runtime === 'opencode';
   const isCodex = runtime === 'codex';
   const isCopilot = runtime === 'copilot';
@@ -1639,7 +1644,7 @@ function copyWithPathReplacement(srcDir, destDir, pathPrefix, runtime, isCommand
 /**
  * Clean up orphaned files from previous Vector versions
  */
-function cleanupOrphanedFiles(configDir) {
+function cleanupOrphanedFiles(configDir: string) {
   const orphanedFiles = [
     'hooks/vector-notify.sh',  // Removed in v1.6.x
     'hooks/statusline.js',  // Renamed to vector-statusline.js in v1.9.0
@@ -1657,7 +1662,7 @@ function cleanupOrphanedFiles(configDir) {
 /**
  * Clean up orphaned hook registrations from settings.json
  */
-function cleanupOrphanedHooks(settings) {
+function cleanupOrphanedHooks(settings: Record<string, unknown>) {
   const orphanedHookPatterns = [
     'vector-notify.sh',  // Removed in v1.6.x
     'hooks/statusline.js',  // Renamed to vector-statusline.js in v1.9.0
@@ -1670,15 +1675,17 @@ function cleanupOrphanedHooks(settings) {
 
   // Check all hook event types (Stop, SessionStart, etc.)
   if (settings.hooks) {
-    for (const eventType of Object.keys(settings.hooks)) {
-      const hookEntries = settings.hooks[eventType];
+    const hooks = settings.hooks as Record<string, unknown[]>;
+    for (const eventType of Object.keys(hooks)) {
+      const hookEntries = hooks[eventType];
       if (Array.isArray(hookEntries)) {
         // Filter out entries that contain orphaned hooks
         const filtered = hookEntries.filter(entry => {
-          if (entry.hooks && Array.isArray(entry.hooks)) {
+          const e = entry as Record<string, unknown>;
+          if (e.hooks && Array.isArray(e.hooks)) {
             // Check if any hook in this entry matches orphaned patterns
-            const hasOrphaned = entry.hooks.some(h =>
-              h.command && orphanedHookPatterns.some(pattern => h.command.includes(pattern))
+            const hasOrphaned = (e.hooks as Record<string, unknown>[]).some((h: Record<string, unknown>) =>
+              h.command && orphanedHookPatterns.some(pattern => (h.command as string).includes(pattern))
             );
             if (hasOrphaned) {
               cleanedHooks = true;
@@ -1687,7 +1694,7 @@ function cleanupOrphanedHooks(settings) {
           }
           return true;  // Keep this entry
         });
-        settings.hooks[eventType] = filtered;
+        hooks[eventType] = filtered;
       }
     }
   }
@@ -1699,9 +1706,10 @@ function cleanupOrphanedHooks(settings) {
   // Fix #330: Update statusLine if it points to old Vector statusline.js path
   // Only match the specific old Vector path pattern (hooks/statusline.js),
   // not third-party statusline scripts that happen to contain 'statusline.js'
-  if (settings.statusLine && settings.statusLine.command &&
-      /hooks[\/\\]statusline\.js/.test(settings.statusLine.command)) {
-    settings.statusLine.command = settings.statusLine.command.replace(
+  const statusLine = settings.statusLine as Record<string, string> | undefined;
+  if (statusLine && statusLine.command &&
+      /hooks[\/\\]statusline\.js/.test(statusLine.command)) {
+    statusLine.command = statusLine.command.replace(
       /hooks([\/\\])statusline\.js/,
       'hooks$1vector-statusline.js'
     );
@@ -1717,7 +1725,7 @@ function cleanupOrphanedHooks(settings) {
  * @param {boolean} isGlobal - Whether to uninstall from global or local
  * @param {string} runtime - Target runtime ('claude', 'opencode', 'gemini', 'codex', 'copilot')
  */
-function uninstall(isGlobal, runtime = 'claude') {
+function uninstall(isGlobal: boolean, runtime: Runtime = 'claude') {
   const isOpencode = runtime === 'opencode';
   const isCodex = runtime === 'codex';
   const isCopilot = runtime === 'copilot';
@@ -1937,65 +1945,69 @@ function uninstall(isGlobal, runtime = 'claude') {
   // 6. Clean up settings.json (remove Vector hooks and statusline)
   const settingsPath = path.join(targetDir, 'settings.json');
   if (fs.existsSync(settingsPath)) {
-    let settings = readSettings(settingsPath);
+    const settings = readSettings(settingsPath);
     let settingsModified = false;
 
     // Remove Vector statusline if it references our hook
-    if (settings.statusLine && settings.statusLine.command &&
-        settings.statusLine.command.includes('vector-statusline')) {
+    const settingsStatusLine = settings.statusLine as Record<string, string> | undefined;
+    if (settingsStatusLine && settingsStatusLine.command &&
+        settingsStatusLine.command.includes('vector-statusline')) {
       delete settings.statusLine;
       settingsModified = true;
       console.log(`  ${green}✓${reset} Removed Vector statusline from settings`);
     }
 
     // Remove Vector hooks from SessionStart
-    if (settings.hooks && settings.hooks.SessionStart) {
-      const before = settings.hooks.SessionStart.length;
-      settings.hooks.SessionStart = settings.hooks.SessionStart.filter(entry => {
-        if (entry.hooks && Array.isArray(entry.hooks)) {
+    const settingsHooks = settings.hooks as Record<string, unknown[]> | undefined;
+    if (settingsHooks && settingsHooks.SessionStart) {
+      const before = settingsHooks.SessionStart.length;
+      settingsHooks.SessionStart = settingsHooks.SessionStart.filter(entry => {
+        const e = entry as Record<string, unknown>;
+        if (e.hooks && Array.isArray(e.hooks)) {
           // Filter out Vector hooks
-          const hasGsdHook = entry.hooks.some(h =>
-            h.command && (h.command.includes('vector-check-update') || h.command.includes('vector-statusline'))
+          const hasGsdHook = (e.hooks as Record<string, unknown>[]).some((h: Record<string, unknown>) =>
+            h.command && ((h.command as string).includes('vector-check-update') || (h.command as string).includes('vector-statusline'))
           );
           return !hasGsdHook;
         }
         return true;
       });
-      if (settings.hooks.SessionStart.length < before) {
+      if (settingsHooks.SessionStart.length < before) {
         settingsModified = true;
         console.log(`  ${green}✓${reset} Removed Vector hooks from settings`);
       }
       // Clean up empty array
-      if (settings.hooks.SessionStart.length === 0) {
-        delete settings.hooks.SessionStart;
+      if (settingsHooks.SessionStart.length === 0) {
+        delete settingsHooks.SessionStart;
       }
     }
 
     // Remove Vector hooks from PostToolUse and AfterTool (Gemini uses AfterTool)
     for (const eventName of ['PostToolUse', 'AfterTool']) {
-      if (settings.hooks && settings.hooks[eventName]) {
-        const before = settings.hooks[eventName].length;
-        settings.hooks[eventName] = settings.hooks[eventName].filter(entry => {
-          if (entry.hooks && Array.isArray(entry.hooks)) {
-            const hasGsdHook = entry.hooks.some(h =>
-              h.command && h.command.includes('vector-context-monitor')
+      if (settingsHooks && settingsHooks[eventName]) {
+        const before = settingsHooks[eventName].length;
+        settingsHooks[eventName] = settingsHooks[eventName].filter(entry => {
+          const e = entry as Record<string, unknown>;
+          if (e.hooks && Array.isArray(e.hooks)) {
+            const hasGsdHook = (e.hooks as Record<string, unknown>[]).some((h: Record<string, unknown>) =>
+              h.command && (h.command as string).includes('vector-context-monitor')
             );
             return !hasGsdHook;
           }
           return true;
         });
-        if (settings.hooks[eventName].length < before) {
+        if (settingsHooks[eventName].length < before) {
           settingsModified = true;
           console.log(`  ${green}✓${reset} Removed context monitor hook from settings`);
         }
-        if (settings.hooks[eventName].length === 0) {
-          delete settings.hooks[eventName];
+        if (settingsHooks[eventName].length === 0) {
+          delete settingsHooks[eventName];
         }
       }
     }
 
     // Clean up empty hooks object
-    if (settings.hooks && Object.keys(settings.hooks).length === 0) {
+    if (settingsHooks && Object.keys(settingsHooks).length === 0) {
       delete settings.hooks;
     }
 
@@ -2018,22 +2030,23 @@ function uninstall(isGlobal, runtime = 'claude') {
 
         // Remove Vector permission entries
         if (config.permission) {
+          const permission = config.permission as Record<string, Record<string, string>>;
           for (const permType of ['read', 'external_directory']) {
-            if (config.permission[permType]) {
-              const keys = Object.keys(config.permission[permType]);
+            if (permission[permType]) {
+              const keys = Object.keys(permission[permType]);
               for (const key of keys) {
                 if (key.includes('core')) {
-                  delete config.permission[permType][key];
+                  delete permission[permType][key];
                   modified = true;
                 }
               }
               // Clean up empty objects
-              if (Object.keys(config.permission[permType]).length === 0) {
-                delete config.permission[permType];
+              if (Object.keys(permission[permType]).length === 0) {
+                delete permission[permType];
               }
             }
           }
-          if (Object.keys(config.permission).length === 0) {
+          if (Object.keys(permission).length === 0) {
             delete config.permission;
           }
         }
@@ -2064,7 +2077,7 @@ function uninstall(isGlobal, runtime = 'claude') {
  * OpenCode supports JSONC format via jsonc-parser, so users may have comments.
  * This is a lightweight inline parser to avoid adding dependencies.
  */
-function parseJsonc(content) {
+function parseJsonc(content: string): Record<string, unknown> {
   // Strip BOM if present
   if (content.charCodeAt(0) === 0xFEFF) {
     content = content.slice(1);
@@ -2137,7 +2150,7 @@ function configureOpencodePermissions(isGlobal = true) {
   const configPath = resolveOpencodeConfigPath(opencodeConfigDir);
 
   // Read existing config or create empty object
-  let config = {};
+  let config: Record<string, unknown> = {};
   if (fs.existsSync(configPath)) {
     try {
       const content = fs.readFileSync(configPath, 'utf8');
@@ -2146,7 +2159,7 @@ function configureOpencodePermissions(isGlobal = true) {
       // Cannot parse - DO NOT overwrite user's config
       const configFile = path.basename(configPath);
       console.log(`  ${yellow}⚠${reset} Could not parse ${configFile} - skipping permission config`);
-      console.log(`    ${dim}Reason: ${e.message}${reset}`);
+      console.log(`    ${dim}Reason: ${(e as Error).message}${reset}`);
       console.log(`    ${dim}Your config was NOT modified. Fix the syntax manually if needed.${reset}`);
       return;
     }
@@ -2154,8 +2167,9 @@ function configureOpencodePermissions(isGlobal = true) {
 
   // Ensure permission structure exists
   if (!config.permission) {
-    config.permission = {};
+    config.permission = {} as Record<string, Record<string, string>>;
   }
+  const permission = config.permission as Record<string, Record<string, string>>;
 
   // Build the Vector path using the actual config directory
   // Use ~ shorthand if it's in the default location, otherwise use full path
@@ -2163,24 +2177,24 @@ function configureOpencodePermissions(isGlobal = true) {
   const vectorPath = opencodeConfigDir === defaultConfigDir
     ? '~/.config/opencode/core/*'
     : `${opencodeConfigDir.replace(/\\/g, '/')}/core/*`;
-  
+
   let modified = false;
 
   // Configure read permission
-  if (!config.permission.read || typeof config.permission.read !== 'object') {
-    config.permission.read = {};
+  if (!permission.read || typeof permission.read !== 'object') {
+    permission.read = {};
   }
-  if (config.permission.read[vectorPath] !== 'allow') {
-    config.permission.read[vectorPath] = 'allow';
+  if (permission.read[vectorPath] !== 'allow') {
+    permission.read[vectorPath] = 'allow';
     modified = true;
   }
 
   // Configure external_directory permission (the safety guard for paths outside project)
-  if (!config.permission.external_directory || typeof config.permission.external_directory !== 'object') {
-    config.permission.external_directory = {};
+  if (!permission.external_directory || typeof permission.external_directory !== 'object') {
+    permission.external_directory = {};
   }
-  if (config.permission.external_directory[vectorPath] !== 'allow') {
-    config.permission.external_directory[vectorPath] = 'allow';
+  if (permission.external_directory[vectorPath] !== 'allow') {
+    permission.external_directory[vectorPath] = 'allow';
     modified = true;
   }
 
@@ -2196,7 +2210,7 @@ function configureOpencodePermissions(isGlobal = true) {
 /**
  * Verify a directory exists and contains files
  */
-function verifyInstalled(dirPath, description) {
+function verifyInstalled(dirPath: string, description: string) {
   if (!fs.existsSync(dirPath)) {
     console.error(`  ${yellow}✗${reset} Failed to install ${description}: directory not created`);
     return false;
@@ -2208,7 +2222,7 @@ function verifyInstalled(dirPath, description) {
       return false;
     }
   } catch (e) {
-    console.error(`  ${yellow}✗${reset} Failed to install ${description}: ${e.message}`);
+    console.error(`  ${yellow}✗${reset} Failed to install ${description}: ${(e as Error).message}`);
     return false;
   }
   return true;
@@ -2217,7 +2231,7 @@ function verifyInstalled(dirPath, description) {
 /**
  * Verify a file exists
  */
-function verifyFileInstalled(filePath, description) {
+function verifyFileInstalled(filePath: string, description: string) {
   if (!fs.existsSync(filePath)) {
     console.error(`  ${yellow}✗${reset} Failed to install ${description}: file not created`);
     return false;
@@ -2241,7 +2255,7 @@ const MANIFEST_NAME = 'vector-file-manifest.json';
 /**
  * Compute SHA256 hash of file contents
  */
-function fileHash(filePath) {
+function fileHash(filePath: string): string {
   const content = fs.readFileSync(filePath);
   return crypto.createHash('sha256').update(content).digest('hex');
 }
@@ -2249,9 +2263,9 @@ function fileHash(filePath) {
 /**
  * Recursively collect all files in dir with their hashes
  */
-function generateManifest(dir, baseDir) {
+function generateManifest(dir: string, baseDir?: string): Record<string, string> {
   if (!baseDir) baseDir = dir;
-  const manifest = {};
+  const manifest: Record<string, string> = {};
   if (!fs.existsSync(dir)) return manifest;
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   for (const entry of entries) {
@@ -2269,7 +2283,7 @@ function generateManifest(dir, baseDir) {
 /**
  * Write file manifest after installation for future modification detection
  */
-function writeManifest(configDir, runtime = 'claude') {
+function writeManifest(configDir: string, runtime: Runtime = 'claude') {
   const isOpencode = runtime === 'opencode';
   const isCodex = runtime === 'codex';
   const isCopilot = runtime === 'copilot';
@@ -2279,7 +2293,7 @@ function writeManifest(configDir, runtime = 'claude') {
   const opencodeCommandDir = path.join(configDir, 'command');
   const codexSkillsDir = path.join(configDir, 'skills');
   const agentsDir = path.join(configDir, 'agents');
-  const manifest = { version: pkg.version, timestamp: new Date().toISOString(), files: {} };
+  const manifest: { version: string; timestamp: string; files: Record<string, string> } = { version: pkg.version, timestamp: new Date().toISOString(), files: {} };
 
   const vectorHashes = generateManifest(vectorDir);
   for (const [rel, hash] of Object.entries(vectorHashes)) {
@@ -2323,7 +2337,7 @@ function writeManifest(configDir, runtime = 'claude') {
  * Detect user-modified Vector files by comparing against install manifest.
  * Backs up modified files to vector-local-patches/ for reapply after update.
  */
-function saveLocalPatches(configDir) {
+function saveLocalPatches(configDir: string) {
   const manifestPath = path.join(configDir, MANIFEST_NAME);
   if (!fs.existsSync(manifestPath)) return [];
 
@@ -2363,7 +2377,7 @@ function saveLocalPatches(configDir) {
 /**
  * After install, report backed-up patches for user to reapply.
  */
-function reportLocalPatches(configDir, runtime = 'claude') {
+function reportLocalPatches(configDir: string, runtime: Runtime = 'claude') {
   const patchesDir = path.join(configDir, PATCHES_DIR_NAME);
   const metaPath = path.join(patchesDir, 'backup-meta.json');
   if (!fs.existsSync(metaPath)) return [];
@@ -2391,7 +2405,7 @@ function reportLocalPatches(configDir, runtime = 'claude') {
   return meta.files || [];
 }
 
-function install(isGlobal, runtime = 'claude') {
+function install(isGlobal: boolean, runtime: Runtime = 'claude') {
   const isOpencode = runtime === 'opencode';
   const isGemini = runtime === 'gemini';
   const isCodex = runtime === 'codex';
@@ -2637,14 +2651,14 @@ function install(isGlobal, runtime = 'claude') {
 
   // Verify no leaked .claude paths in non-Claude runtimes
   if (runtime !== 'claude') {
-    const leakedPaths = [];
-    function scanForLeakedPaths(dir) {
+    const leakedPaths: Array<{file: string; count: number}> = [];
+    function scanForLeakedPaths(dir: string) {
       if (!fs.existsSync(dir)) return;
       let entries;
       try {
         entries = fs.readdirSync(dir, { withFileTypes: true });
       } catch (err) {
-        if (err.code === 'EPERM' || err.code === 'EACCES') {
+        if ((err as NodeJS.ErrnoException).code === 'EPERM' || (err as NodeJS.ErrnoException).code === 'EACCES') {
           return; // skip inaccessible directories
         }
         throw err;
@@ -2658,7 +2672,7 @@ function install(isGlobal, runtime = 'claude') {
           try {
             content = fs.readFileSync(fullPath, 'utf8');
           } catch (err) {
-            if (err.code === 'EPERM' || err.code === 'EACCES') {
+            if ((err as NodeJS.ErrnoException).code === 'EPERM' || (err as NodeJS.ErrnoException).code === 'EACCES') {
               continue; // skip inaccessible files
             }
             throw err;
@@ -2723,10 +2737,11 @@ function install(isGlobal, runtime = 'claude') {
   // Enable experimental agents for Gemini CLI (required for custom sub-agents)
   if (isGemini) {
     if (!settings.experimental) {
-      settings.experimental = {};
+      settings.experimental = {} as Record<string, unknown>;
     }
-    if (!settings.experimental.enableAgents) {
-      settings.experimental.enableAgents = true;
+    const experimental = settings.experimental as Record<string, unknown>;
+    if (!experimental.enableAgents) {
+      experimental.enableAgents = true;
       console.log(`  ${green}✓${reset} Enabled experimental agents`);
     }
   }
@@ -2734,18 +2749,20 @@ function install(isGlobal, runtime = 'claude') {
   // Configure SessionStart hook for update checking (skip for opencode)
   if (!isOpencode) {
     if (!settings.hooks) {
-      settings.hooks = {};
+      settings.hooks = {} as Record<string, unknown[]>;
     }
-    if (!settings.hooks.SessionStart) {
-      settings.hooks.SessionStart = [];
+    const hooksMap = settings.hooks as Record<string, unknown[]>;
+    if (!hooksMap.SessionStart) {
+      hooksMap.SessionStart = [];
     }
 
-    const hasGsdUpdateHook = settings.hooks.SessionStart.some(entry =>
-      entry.hooks && entry.hooks.some(h => h.command && h.command.includes('vector-check-update'))
-    );
+    const hasGsdUpdateHook = hooksMap.SessionStart.some((entry: unknown) => {
+      const e = entry as Record<string, unknown>;
+      return e.hooks && Array.isArray(e.hooks) && (e.hooks as Record<string, unknown>[]).some((h: Record<string, unknown>) => h.command && (h.command as string).includes('vector-check-update'));
+    });
 
     if (!hasGsdUpdateHook) {
-      settings.hooks.SessionStart.push({
+      hooksMap.SessionStart.push({
         hooks: [
           {
             type: 'command',
@@ -2757,16 +2774,17 @@ function install(isGlobal, runtime = 'claude') {
     }
 
     // Configure post-tool hook for context window monitoring
-    if (!settings.hooks[postToolEvent]) {
-      settings.hooks[postToolEvent] = [];
+    if (!hooksMap[postToolEvent]) {
+      hooksMap[postToolEvent] = [];
     }
 
-    const hasContextMonitorHook = settings.hooks[postToolEvent].some(entry =>
-      entry.hooks && entry.hooks.some(h => h.command && h.command.includes('vector-context-monitor'))
-    );
+    const hasContextMonitorHook = hooksMap[postToolEvent].some((entry: unknown) => {
+      const e = entry as Record<string, unknown>;
+      return e.hooks && Array.isArray(e.hooks) && (e.hooks as Record<string, unknown>[]).some((h: Record<string, unknown>) => h.command && (h.command as string).includes('vector-context-monitor'));
+    });
 
     if (!hasContextMonitorHook) {
-      settings.hooks[postToolEvent].push({
+      hooksMap[postToolEvent].push({
         hooks: [
           {
             type: 'command',
@@ -2784,12 +2802,12 @@ function install(isGlobal, runtime = 'claude') {
 /**
  * Apply statusline config, then print completion message
  */
-function finishInstall(settingsPath, settings, statuslineCommand, shouldInstallStatusline, runtime = 'claude', isGlobal = true) {
+function finishInstall(settingsPath: string | null, settings: Record<string, unknown> | null, statuslineCommand: string | null, shouldInstallStatusline: boolean, runtime: Runtime = 'claude', isGlobal = true) {
   const isOpencode = runtime === 'opencode';
   const isCodex = runtime === 'codex';
   const isCopilot = runtime === 'copilot';
 
-  if (shouldInstallStatusline && !isOpencode && !isCodex && !isCopilot) {
+  if (shouldInstallStatusline && !isOpencode && !isCodex && !isCopilot && settings) {
     settings.statusLine = {
       type: 'command',
       command: statuslineCommand
@@ -2798,7 +2816,7 @@ function finishInstall(settingsPath, settings, statuslineCommand, shouldInstallS
   }
 
   // Write settings when runtime supports settings.json
-  if (!isCodex && !isCopilot) {
+  if (!isCodex && !isCopilot && settingsPath && settings) {
     writeSettings(settingsPath, settings);
   }
 
@@ -2829,8 +2847,9 @@ function finishInstall(settingsPath, settings, statuslineCommand, shouldInstallS
 /**
  * Handle statusline configuration with optional prompt
  */
-function handleStatusline(settings, isInteractive, callback) {
-  const hasExisting = settings.statusLine != null;
+function handleStatusline(settings: Record<string, unknown> | null, isInteractive: boolean, callback: (shouldInstall: boolean) => void) {
+  const statusLine = settings ? (settings.statusLine as Record<string, string> | undefined) : undefined;
+  const hasExisting = statusLine != null;
 
   if (!hasExisting) {
     callback(true);
@@ -2849,7 +2868,7 @@ function handleStatusline(settings, isInteractive, callback) {
     return;
   }
 
-  const existingCmd = settings.statusLine.command || settings.statusLine.url || '(custom)';
+  const existingCmd = (statusLine && (statusLine.command || statusLine.url)) || '(custom)';
 
   const rl = readline.createInterface({
     input: process.stdin,
@@ -2880,7 +2899,7 @@ function handleStatusline(settings, isInteractive, callback) {
 /**
  * Prompt for runtime selection
  */
-function promptRuntime(callback) {
+function promptRuntime(callback: (runtimes: Runtime[]) => void) {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -2930,7 +2949,7 @@ function promptRuntime(callback) {
 /**
  * Prompt for install location
  */
-function promptLocation(runtimes) {
+function promptLocation(runtimes: Runtime[]) {
   if (!process.stdin.isTTY) {
     console.log(`  ${yellow}Non-interactive terminal detected, defaulting to global install${reset}\n`);
     installAllRuntimes(runtimes, true, false);
@@ -2975,8 +2994,8 @@ function promptLocation(runtimes) {
 /**
  * Install Vector for all selected runtimes
  */
-function installAllRuntimes(runtimes, isGlobal, isInteractive) {
-  const results = [];
+function installAllRuntimes(runtimes: Runtime[], isGlobal: boolean, isInteractive: boolean) {
+  const results: Array<{ settingsPath: string | null; settings: Record<string, unknown> | null; statuslineCommand: string | null; runtime: Runtime }> = [];
 
   for (const runtime of runtimes) {
     const result = install(isGlobal, runtime);
@@ -2986,7 +3005,7 @@ function installAllRuntimes(runtimes, isGlobal, isInteractive) {
   const statuslineRuntimes = ['claude', 'gemini'];
   const primaryStatuslineResult = results.find(r => statuslineRuntimes.includes(r.runtime));
 
-  const finalize = (shouldInstallStatusline) => {
+  const finalize = (shouldInstallStatusline: boolean) => {
     for (const result of results) {
       const useStatusline = statuslineRuntimes.includes(result.runtime) && shouldInstallStatusline;
       finishInstall(
@@ -3056,7 +3075,7 @@ if (hasGlobal && hasLocal) {
     console.error(`  ${yellow}--uninstall requires --global or --local${reset}`);
     process.exit(1);
   }
-  const runtimes = selectedRuntimes.length > 0 ? selectedRuntimes : ['claude'];
+  const runtimes: Runtime[] = selectedRuntimes.length > 0 ? selectedRuntimes : ['claude'];
   for (const runtime of runtimes) {
     uninstall(hasGlobal, runtime);
   }
