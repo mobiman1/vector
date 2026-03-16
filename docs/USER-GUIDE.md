@@ -23,7 +23,7 @@ A detailed reference for workflows, troubleshooting, and configuration. For quic
 ```
   ┌──────────────────────────────────────────────────┐
   │                   NEW PROJECT                    │
-  │  /vector:new-project                                │
+  │  /vector:new-project                             │
   │  Questions -> Research -> Requirements -> Roadmap│
   └─────────────────────────┬────────────────────────┘
                             │
@@ -31,23 +31,23 @@ A detailed reference for workflows, troubleshooting, and configuration. For quic
              │      FOR EACH PHASE:       │
              │                            │
              │  ┌────────────────────┐    │
-             │  │ /vector:discuss-phase │    │  <- Lock in preferences
+             │  │ /vector:discuss-phase   │  <- Lock in preferences
              │  └──────────┬─────────┘    │
              │             │              │
              │  ┌──────────▼─────────┐    │
-             │  │ /vector:ui-phase      │    │  <- Design contract (frontend)
+             │  │ /vector:ui-phase   │    │  <- Design contract (frontend)
              │  └──────────┬─────────┘    │
              │             │              │
              │  ┌──────────▼─────────┐    │
-             │  │ /vector:plan-phase    │    │  <- Research + Plan + Verify
+             │  │ /vector:plan-phase │    │  <- Research + Plan + Verify
              │  └──────────┬─────────┘    │
              │             │              │
              │  ┌──────────▼─────────┐    │
-             │  │ /vector:execute-phase │    │  <- Parallel execution
+             │  │ /vector:execute-phase   │  <- Parallel execution
              │  └──────────┬─────────┘    │
              │             │              │
              │  ┌──────────▼─────────┐    │
-             │  │ /vector:verify-work   │    │  <- Manual UAT
+             │  │ /vector:verify-work│    │  <- Manual UAT
              │  └──────────┬─────────┘    │
              │             │              │
              │     Next Phase?────────────┘
@@ -316,13 +316,15 @@ Controlled by `workflow.ui_safety_gate` config toggle.
 | Command | Purpose | When to Use |
 |---------|---------|-------------|
 | `/vector:map-codebase` | Analyze existing codebase | Before `/vector:new-project` on existing code |
-| `/vector:quick` | Ad-hoc task with Vector guarantees | Bug fixes, small features, config changes |
+| `/vector:quick [--full] [--discuss] [--research]` | Ad-hoc task with Vector guarantees (`--full` adds plan-checking and verification, `--discuss` gathers context first, `--research` investigates approaches before planning) | Bug fixes, small features, config changes |
 | `/vector:debug [desc]` | Systematic debugging with persistent state | When something breaks |
 | `/vector:add-todo [desc]` | Capture an idea for later | Think of something during a session |
 | `/vector:check-todos` | List pending todos | Review captured ideas |
 | `/vector:settings` | Configure workflow toggles and model profile | Change model, toggle agents |
 | `/vector:set-profile <profile>` | Quick profile switch | Change cost/quality tradeoff |
 | `/vector:reapply-patches` | Restore local modifications after update | After `/vector:update` if you had local edits |
+| `/vector:health [--repair]` | Validate `.planning/` directory integrity, auto-repair with `--repair` | When Vector behaves oddly or state seems corrupted |
+| `/vector:stats` | Show project statistics (phases, plans, requirements, git metrics) | Periodically, or when reviewing project health |
 
 ---
 
