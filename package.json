@@ -1,0 +1,51 @@
+{
+  "name": "vector",
+  "version": "1.24.0",
+  "description": "A meta-prompting, context engineering, and spec-driven development system for iOS development",
+  "bin": {
+    "vector": "bin/install.js"
+  },
+  "files": [
+    "bin",
+    "commands",
+    "core",
+    "agents",
+    "hooks/dist",
+    "scripts"
+  ],
+  "keywords": [
+    "claude",
+    "claude-code",
+    "ai",
+    "meta-prompting",
+    "context-engineering",
+    "spec-driven-development",
+    "gemini",
+    "gemini-cli",
+    "codex",
+    "codex-cli"
+  ],
+  "author": "TÂCHES",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/glittercowboy/core.git"
+  },
+  "homepage": "https://github.com/glittercowboy/core",
+  "bugs": {
+    "url": "https://github.com/glittercowboy/core/issues"
+  },
+  "engines": {
+    "node": ">=16.7.0"
+  },
+  "devDependencies": {
+    "c8": "^11.0.0",
+    "esbuild": "^0.24.0"
+  },
+  "scripts": {
+    "build:hooks": "node scripts/build-hooks.js",
+    "prepublishOnly": "npm run build:hooks",
+    "test": "node scripts/run-tests.cjs",
+    "test:coverage": "c8 --check-coverage --lines 70 --reporter text --include 'core/bin/lib/*.cjs' --exclude 'tests/**' --all node scripts/run-tests.cjs"
+  }
+}

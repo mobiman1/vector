@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Gradient spans x=70 to x=465 -->
+    <linearGradient id="vgrad" x1="70" y1="146" x2="465" y2="146" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0A84FF"/>
+      <stop offset="100%" stop-color="#5E5CE6"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <clipPath id="ios-shape">
+      <rect width="512" height="512" rx="115" ry="115"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#ios-shape)">
+    <!-- Background -->
+    <rect width="512" height="512" fill="#0d0d14"/>
+
+    <!--
+      V mark geometry — matches logo arm ratio 150:220 = 0.682 (logo: 380:560 = 0.679)
+        V bottom:        (220, 366)   — shifted left to balance rightward arrow
+        Left arm top:    (70,  146)   — arm width=150, height=220
+        Right arm top:   (370, 146)   — symmetric right leg, bends right
+        Horizontal base: (398, 146)   — arrowhead base (67px before tip)
+        Arrowhead tip:   (465, 146)   — pointing right, ±28px vertically
+
+      Vertically centered: top=146, bottom=366, center=256 ✓
+    -->
+    <g filter="url(#glow)">
+      <polyline
+        points="70,146 220,366 370,146 398,146"
+        fill="none"
+        stroke="url(#vgrad)"
+        stroke-width="19"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+      <!-- Arrowhead pointing right: tip (465,146), base at x=398, ±28px vertically -->
+      <polygon points="465,146 398,118 398,174" fill="url(#vgrad)"/>
+    </g>
+  </g>
+</svg>

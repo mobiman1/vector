@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 2000" width="2000" height="2000">
+  <defs>
+    <linearGradient id="vgrad" x1="560" y1="530" x2="1560" y2="530" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0A84FF"/>
+      <stop offset="100%" stop-color="#5E5CE6"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g filter="url(#glow)">
+    <polyline
+      points="560,530 940,1090 1320,530 1390,530"
+      fill="none"
+      stroke="url(#vgrad)"
+      stroke-width="72"
+      stroke-linecap="round"
+      stroke-linejoin="round"/>
+    <polygon points="1560,530 1390,460 1390,600" fill="url(#vgrad)"/>
+  </g>
+
+  <!-- VECTOR wordmark -->
+  <text
+    x="1060" y="1340"
+    text-anchor="middle"
+    font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif"
+    font-size="192"
+    font-weight="700"
+    letter-spacing="40"
+    fill="#F5F5F7">VECTOR</text>
+
+  <!-- Tagline -->
+  <text
+    x="1060" y="1440"
+    text-anchor="middle"
+    font-family="-apple-system, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif"
+    font-size="52"
+    font-weight="300"
+    letter-spacing="16"
+    fill="#8E8E93">iOS DEVELOPMENT WORKFLOW</text>
+</svg>
