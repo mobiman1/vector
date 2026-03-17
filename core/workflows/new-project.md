@@ -218,7 +218,7 @@ Proceed to Step 4 (skip Steps 3 and 5).
 
 Ask inline (freeform, NOT AskUserQuestion):
 
-"What do you want to build?"
+"What type of iOS app would you like to build?"
 
 Wait for their response. This gives you the context needed to ask intelligent follow-up questions.
 
@@ -232,6 +232,14 @@ Keep following threads. Each answer opens new threads to explore. Ask about:
 - What they mean by vague terms
 - What it would actually look like
 - What's already decided
+
+**iOS-specific threads to probe (weave naturally, don't checklist):**
+- UI framework: SwiftUI, UIKit, or mixed?
+- Minimum iOS version target
+- Device support: iPhone only, iPad, or Universal?
+- Native capabilities needed: camera, notifications, HealthKit, location, iCloud sync, widgets, etc.
+- Distribution: App Store, TestFlight only, or internal/enterprise?
+- Any backend needed, or fully on-device?
 
 Consult `questioning.md` for techniques:
 - Challenge vagueness

@@ -53,7 +53,7 @@ One sentence that drives prioritization when tradeoffs arise.]
 - **[Type]**: [What] — [Why]
 - **[Type]**: [What] — [Why]
 
-Common types: Tech stack, Timeline, Budget, Dependencies, Compatibility, Performance, Security
+Common types: Tech stack, Platform (iOS version, device targets), Timeline, Budget, Dependencies, Compatibility, Performance, Security, Distribution (App Store / TestFlight / enterprise)
 
 ## Key Decisions
 
