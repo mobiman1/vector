@@ -218,7 +218,7 @@ Proceed to Step 4 (skip Steps 3 and 5).
 
 Ask inline (freeform, NOT AskUserQuestion):
 
-"What type of iOS app would you like to build?"
+"Describe the type of iOS app you would like to build"
 
 Wait for their response. This gives you the context needed to ask intelligent follow-up questions.
 
