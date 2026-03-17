@@ -282,7 +282,7 @@ Format completion message (changelog was already shown in confirmation step):
 
 ```
 ╔═══════════════════════════════════════════════════════════╗
-║  Vector Updated: v1.5.10 → v1.5.15                           ║
+║  Vector Updated: v1.5.10 → v1.5.15                        ║
 ╚═══════════════════════════════════════════════════════════╝
 
 ⚠️  Restart your runtime to pick up the new commands.

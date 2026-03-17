@@ -251,16 +251,16 @@ function getGlobalDir(runtime: Runtime, explicitDir: string | null = null): stri
 }
 
 const banner = '\n' +
-  cyan + '  \\         /──────▶\n' +
-  '   \\       /\n' +
-  '    \\     /\n' +
-  '     \\   /\n' +
-  '      \\ /\n' +
-  '       \\/' + reset + '\n' +
+  cyan + '    \\          /────▶\n' +
+  '     \\        /\n' +
+  '      \\      /\n' +
+  '       \\    /\n' +
+  '        \\  /\n' +
+  '         \\/' + reset + '\n' +
   '\n' +
   '  Vector ' + dim + 'v' + pkg.version + reset + '\n' +
-  '  A meta-prompting, context engineering and spec-driven\n' +
-  '  development system for Claude Code, OpenCode, Gemini, Codex, Copilot, and Antigravity by Mobiman.\n';
+  '  A meta-prompting, context engineering, and spec-driven\n' +
+  '  development system for iOS app creation by Mobiman\n';
 
 // Parse --config-dir argument
 function parseConfigDirArg() {
@@ -3094,9 +3094,7 @@ if (hasGlobal && hasLocal) {
     console.log(`  ${yellow}Non-interactive terminal detected, defaulting to Claude Code global install${reset}\n`);
     installAllRuntimes(['claude'], true, false);
   } else {
-    promptRuntime((runtimes) => {
-      promptLocation(runtimes);
-    });
+    installAllRuntimes(['claude'], true, true);
   }
 }
 

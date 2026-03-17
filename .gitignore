@@ -11,6 +11,11 @@ commands.html
 # Build artifacts (committed to npm, not git)
 hooks/dist/
 
+# Compiled TypeScript output
+**/*.cjs
+**/*.d.cts
+**/*.cjs.map
+
 # Coverage artifacts
 coverage/
 
