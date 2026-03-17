@@ -1,7 +1,7 @@
 <div align="center">
 
 # Vector
-**A light-weight and powerful meta-prompting, context engineering, and spec-driven development system for iOS app creation**
+**A meta-prompting, context engineering, and spec-driven development system for iOS app creation**
 
 ## Getting Started
 
