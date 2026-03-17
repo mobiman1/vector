@@ -1,12 +1,14 @@
 <div align="center">
 
 # Vector
-**A meta-prompting, context engineering, and spec-driven development system for iOS app creation**
+**A meta-prompting and context engineering development system for iOS**
+
+---
 
 ## Getting Started
 
 ```bash
-npx vector@latest
+npx @mobiman/vector
 ```
 
 <br>

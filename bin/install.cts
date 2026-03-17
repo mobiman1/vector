@@ -259,8 +259,8 @@ const banner = '\n' +
   '         \\/' + reset + '\n' +
   '\n' +
   '  Vector ' + dim + 'v' + pkg.version + reset + '\n' +
-  '  A meta-prompting, context engineering, and spec-driven\n' +
-  '  development system for iOS app creation by Mobiman\n';
+  '  A meta-prompting and context engineering development \n' +
+  '  system for iOS by Mobiman\n';
 
 // Parse --config-dir argument
 function parseConfigDirArg() {
