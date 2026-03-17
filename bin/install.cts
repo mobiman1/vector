@@ -251,16 +251,16 @@ function getGlobalDir(runtime: Runtime, explicitDir: string | null = null): stri
 }
 
 const banner = '\n' +
-  cyan + '   ██████╗ ███████╗██████╗\n' +
-  '  ██╔════╝ ██╔════╝██╔══██╗\n' +
-  '  ██║  ███╗███████╗██║  ██║\n' +
-  '  ██║   ██║╚════██║██║  ██║\n' +
-  '  ╚██████╔╝███████║██████╔╝\n' +
-  '   ╚═════╝ ╚══════╝╚═════╝' + reset + '\n' +
+  cyan + '  \\         /──────▶\n' +
+  '   \\       /\n' +
+  '    \\     /\n' +
+  '     \\   /\n' +
+  '      \\ /\n' +
+  '       \\/' + reset + '\n' +
   '\n' +
   '  Vector ' + dim + 'v' + pkg.version + reset + '\n' +
   '  A meta-prompting, context engineering and spec-driven\n' +
-  '  development system for Claude Code, OpenCode, Gemini, Codex, Copilot, and Antigravity by TÂCHES.\n';
+  '  development system for Claude Code, OpenCode, Gemini, Codex, Copilot, and Antigravity by Mobiman.\n';
 
 // Parse --config-dir argument
 function parseConfigDirArg() {

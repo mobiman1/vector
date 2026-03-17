@@ -248,16 +248,16 @@ function getGlobalDir(runtime, explicitDir = null) {
     return path_1.default.join(os_1.default.homedir(), '.claude');
 }
 const banner = '\n' +
-    cyan + '   ██████╗ ███████╗██████╗\n' +
-    '  ██╔════╝ ██╔════╝██╔══██╗\n' +
-    '  ██║  ███╗███████╗██║  ██║\n' +
-    '  ██║   ██║╚════██║██║  ██║\n' +
-    '  ╚██████╔╝███████║██████╔╝\n' +
-    '   ╚═════╝ ╚══════╝╚═════╝' + reset + '\n' +
+    cyan + '  \\         /──────▶\n' +
+    '   \\       /\n' +
+    '    \\     /\n' +
+    '     \\   /\n' +
+    '      \\ /\n' +
+    '       \\/' + reset + '\n' +
     '\n' +
     '  Vector ' + dim + 'v' + package_json_1.default.version + reset + '\n' +
     '  A meta-prompting, context engineering and spec-driven\n' +
-    '  development system for Claude Code, OpenCode, Gemini, Codex, Copilot, and Antigravity by TÂCHES.\n';
+    '  development system for Claude Code, OpenCode, Gemini, Codex, Copilot, and Antigravity by Mobiman.\n';
 // Parse --config-dir argument
 function parseConfigDirArg() {
     const configDirIndex = args.findIndex(arg => arg === '--config-dir' || arg === '-c');
