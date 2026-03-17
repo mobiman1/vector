@@ -1,9 +1,7 @@
 <div align="center">
 
 # Vector
-**A light-weight and powerful meta-prompting, context engineering and spec-driven development system for iOS**
-
----
+**A light-weight and powerful meta-prompting, context engineering, and spec-driven development system for iOS app creation**
 
 ## Getting Started
 
@@ -45,8 +43,6 @@ Every stage uses the same pattern: a thin orchestrator spawns specialized agents
 The orchestrator never does heavy lifting. It spawns agents, waits, integrates results.
 
 **The result:** You can run an entire phase — deep research, multiple plans created and verified, thousands of lines of code written across parallel executors, automated verification against goals — and your main context window stays at 30-40%. The work happens in fresh subagent contexts. Your session stays fast and responsive.
-
----
 
 ## Commands
 
