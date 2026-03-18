@@ -16,6 +16,8 @@ const green = '\x1b[32m';
 const yellow = '\x1b[33m';
 const dim = '\x1b[2m';
 const reset = '\x1b[0m';
+const bold = '\x1b[1m';
+const purple = '\x1b[38;5;135m';
 
 // Codex config.toml constants
 const GSD_CODEX_MARKER = '# Vector Agent Configuration \u2014 managed by core installer';
@@ -251,16 +253,10 @@ function getGlobalDir(runtime: Runtime, explicitDir: string | null = null): stri
 }
 
 const banner = '\n' +
-  cyan + '    \\          /────▶\n' +
-  '     \\        /\n' +
-  '      \\      /\n' +
-  '       \\    /\n' +
-  '        \\  /\n' +
-  '         \\/' + reset + '\n' +
+  bold + purple + '  ＶＥＣＴＯＲ' + reset + dim + '   by Mobiman' + reset + '\n' +
   '\n' +
-  '  Vector ' + dim + 'v' + pkg.version + reset + '\n' +
-  '  A meta-prompting and context engineering development \n' +
-  '  system for iOS by Mobiman\n';
+  dim + '  v' + pkg.version + reset + '\n' +
+  '  A meta-prompting and context engineering development system for iOS\n';
 
 // Parse --config-dir argument
 function parseConfigDirArg() {
