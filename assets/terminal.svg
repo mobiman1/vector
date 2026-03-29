@@ -66,7 +66,7 @@
 
     <!-- Title and subtitle -->
     <text class="text white" font-size="15" y="72">  <tspan font-weight="700">Vector</tspan> <tspan class="dim">v1.0.0</tspan></text>
-    <text class="text dim" font-size="15" y="96">  AI-powered iOS development workflow</text>
+    <text class="text dim" font-size="15" y="96">  AI-powered mobile development workflow</text>
 
     <!-- Divider -->
     <line x1="36" y1="116" x2="600" y2="116" stroke="#1c1c1e" stroke-width="1"/>

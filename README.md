@@ -1,7 +1,7 @@
 <div align="center">
 
 # Vector
-**A meta-prompting and context engineering development system**
+**An open-source spec-driven system for building mobile apps with Claude**
 
 [![npm](https://img.shields.io/npm/v/@mobiman/vector)](https://www.npmjs.com/package/@mobiman/vector)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)

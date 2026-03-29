@@ -1,7 +1,7 @@
 {
   "name": "@mobiman/vector",
   "version": "1.1.4",
-  "description": "A meta-prompting and context engineering development system for iOS",
+  "description": "An open-source spec-driven system for building mobile apps with Claude",
   "bin": {
     "vector": "bin/install.cjs"
   },
@@ -16,24 +16,32 @@
   "keywords": [
     "claude",
     "claude-code",
-    "ai",
-    "meta-prompting",
-    "context-engineering",
-    "spec-driven-development",
     "gemini",
     "gemini-cli",
     "codex",
-    "codex-cli"
+    "codex-cli",
+    "opencode",
+    "ai",
+    "agents",
+    "agentic",
+    "workflow",
+    "spec-driven-development",
+    "mobile",
+    "app-development",
+    "ios",
+    "android",
+    "swift",
+    "kotlin"
   ],
   "author": "Mobiman",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mobiman/core.git"
+    "url": "git+https://github.com/mobiman1/vector.git"
   },
-  "homepage": "https://github.com/mobiman/core",
+  "homepage": "https://github.com/mobiman1/vector",
   "bugs": {
-    "url": "https://github.com/mobiman/core/issues"
+    "url": "https://github.com/mobiman1/vector/issues"
   },
   "engines": {
     "node": ">=16.7.0"

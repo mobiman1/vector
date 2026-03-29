@@ -172,7 +172,7 @@ export function cmdInitNewProject(cwd: string, raw: boolean): void {
   let hasCode = false;
   let hasPackageFile = false;
   try {
-    const files = execSync('find . -maxdepth 3 \\( -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.swift" -o -name "*.java" \\) 2>/dev/null | grep -v node_modules | grep -v .git | head -5', {
+    const files = execSync('find . -maxdepth 3 \\( -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.swift" -o -name "*.kt" -o -name "*.java" \\) 2>/dev/null | grep -v node_modules | grep -v .git | head -5', {
       cwd,
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -184,7 +184,9 @@ export function cmdInitNewProject(cwd: string, raw: boolean): void {
                    pathExistsInternal(cwd, 'requirements.txt') ||
                    pathExistsInternal(cwd, 'Cargo.toml') ||
                    pathExistsInternal(cwd, 'go.mod') ||
-                   pathExistsInternal(cwd, 'Package.swift');
+                   pathExistsInternal(cwd, 'Package.swift') ||
+                   pathExistsInternal(cwd, 'build.gradle') ||
+                   pathExistsInternal(cwd, 'build.gradle.kts');
 
   const result = {
     // Models

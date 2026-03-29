@@ -256,7 +256,7 @@ const banner = '\n' +
   bold + purple + '  ＶＥＣＴＯＲ' + reset + dim + '   by Mobiman' + reset + '\n' +
   '\n' +
   dim + '  v' + pkg.version + reset + '\n' +
-  '  A meta-prompting and context engineering development system for iOS\n';
+  '  An open-source spec-driven system for building mobile apps with Claude\n';
 
 // Parse --config-dir argument
 function parseConfigDirArg() {

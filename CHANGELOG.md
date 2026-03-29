@@ -1501,7 +1501,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.0.0] - 2025-12-14
 
 ### Added
-- Initial release of Vector (Vector) meta-prompting system
+- Initial release of Vector (Vector) spec-driven development system
 - Core slash commands: `/vector:new-project`, `/vector:discuss-phase`, `/vector:plan-phase`, `/vector:execute-phase`
 - PROJECT.md and STATE.md templates
 - Phase-based development workflow

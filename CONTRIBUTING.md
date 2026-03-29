@@ -1,6 +1,6 @@
 # Contributing to Vector
 
-Thanks for your interest in contributing! Vector is a meta-prompting and context engineering system built on top of Claude Code.
+Thanks for your interest in contributing! Vector is a spec-driven development system built on top of Claude Code.
 
 ## Ways to Contribute
 

@@ -67,6 +67,17 @@ Plans execute autonomously. Checkpoints formalize interaction points where human
 </task>
 ```
 
+**Example: Android Gradle Build**
+```xml
+<task type="auto">
+  <name>Build Android app with Gradle</name>
+  <files>app/build.gradle.kts, app/src/</files>
+  <action>Run `./gradlew assembleDebug`. Check for compilation errors in output.</action>
+  <verify>Build output contains "BUILD SUCCESSFUL", no errors</verify>
+  <done>App builds successfully</done>
+</task>
+```
+
 **Example: Xcode Build**
 ```xml
 <task type="auto">
@@ -396,6 +407,7 @@ I'll verify: vercel whoami returns your account
 | GitHub | `gh` | `repo create`, `pr create`, `secret set` | `gh auth login` |
 | Node | `npm`/`pnpm` | `install`, `run build`, `test`, `run dev` | N/A |
 | Xcode | `xcodebuild` | `-project`, `-scheme`, `build`, `test` | N/A |
+| Android/Gradle | `./gradlew` | `assembleDebug`, `assembleRelease`, `test`, `connectedAndroidTest` | N/A |
 | Convex | `npx convex` | `dev`, `deploy`, `env set`, `env get` | `npx convex login` |
 
 ## Environment Variable Automation
