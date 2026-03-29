@@ -19,9 +19,9 @@ const {
   convertClaudeAgentToCodexAgent,
   generateCodexAgentToml,
   generateCodexConfigBlock,
-  stripGsdFromCodexConfig,
+  stripVectorFromCodexConfig,
   mergeCodexConfig,
-  GSD_CODEX_MARKER,
+  VECTOR_CODEX_MARKER,
   CODEX_AGENT_SANDBOX,
 } = require('../bin/install.cjs');
 
@@ -203,7 +203,7 @@ describe('generateCodexConfigBlock', () => {
 
   test('starts with Vector marker', () => {
     const result = generateCodexConfigBlock(agents);
-    assert.ok(result.startsWith(GSD_CODEX_MARKER), 'starts with marker');
+    assert.ok(result.startsWith(VECTOR_CODEX_MARKER), 'starts with marker');
   });
 
   test('does not include feature flags or agents table header', () => {
@@ -226,27 +226,27 @@ describe('generateCodexConfigBlock', () => {
   });
 });
 
-// ─── stripGsdFromCodexConfig ────────────────────────────────────────────────────
+// ─── stripVectorFromCodexConfig ────────────────────────────────────────────────────
 
-describe('stripGsdFromCodexConfig', () => {
+describe('stripVectorFromCodexConfig', () => {
   test('returns null for Vector-only config', () => {
-    const content = `${GSD_CODEX_MARKER}\n[features]\nmulti_agent = true\n`;
-    const result = stripGsdFromCodexConfig(content);
+    const content = `${VECTOR_CODEX_MARKER}\n[features]\nmulti_agent = true\n`;
+    const result = stripVectorFromCodexConfig(content);
     assert.strictEqual(result, null, 'returns null when Vector-only');
   });
 
   test('preserves user content before marker', () => {
-    const content = `[model]\nname = "o3"\n\n${GSD_CODEX_MARKER}\n[features]\nmulti_agent = true\n`;
-    const result = stripGsdFromCodexConfig(content);
+    const content = `[model]\nname = "o3"\n\n${VECTOR_CODEX_MARKER}\n[features]\nmulti_agent = true\n`;
+    const result = stripVectorFromCodexConfig(content);
     assert.ok(result.includes('[model]'), 'preserves user section');
     assert.ok(result.includes('name = "o3"'), 'preserves user values');
     assert.ok(!result.includes('multi_agent'), 'removes Vector content');
-    assert.ok(!result.includes(GSD_CODEX_MARKER), 'removes marker');
+    assert.ok(!result.includes(VECTOR_CODEX_MARKER), 'removes marker');
   });
 
   test('strips injected feature keys without marker', () => {
     const content = `[features]\nmulti_agent = true\ndefault_mode_request_user_input = true\nother_feature = false\n`;
-    const result = stripGsdFromCodexConfig(content);
+    const result = stripVectorFromCodexConfig(content);
     assert.ok(!result.includes('multi_agent'), 'removes multi_agent');
     assert.ok(!result.includes('default_mode_request_user_input'), 'removes request_user_input');
     assert.ok(result.includes('other_feature = false'), 'preserves user features');
@@ -254,25 +254,25 @@ describe('stripGsdFromCodexConfig', () => {
 
   test('removes empty [features] section', () => {
     const content = `[features]\nmulti_agent = true\n[model]\nname = "o3"\n`;
-    const result = stripGsdFromCodexConfig(content);
+    const result = stripVectorFromCodexConfig(content);
     assert.ok(!result.includes('[features]'), 'removes empty features section');
     assert.ok(result.includes('[model]'), 'preserves other sections');
   });
 
   test('strips injected keys above marker on uninstall', () => {
     // Case 3 install injects keys into [features] AND appends marker block
-    const content = `[model]\nname = "o3"\n\n[features]\nmulti_agent = true\ndefault_mode_request_user_input = true\nsome_custom_flag = true\n\n${GSD_CODEX_MARKER}\n[agents]\nmax_threads = 4\n`;
-    const result = stripGsdFromCodexConfig(content);
+    const content = `[model]\nname = "o3"\n\n[features]\nmulti_agent = true\ndefault_mode_request_user_input = true\nsome_custom_flag = true\n\n${VECTOR_CODEX_MARKER}\n[agents]\nmax_threads = 4\n`;
+    const result = stripVectorFromCodexConfig(content);
     assert.ok(result.includes('[model]'), 'preserves user model section');
     assert.ok(result.includes('some_custom_flag = true'), 'preserves user feature');
     assert.ok(!result.includes('multi_agent'), 'strips injected multi_agent');
     assert.ok(!result.includes('default_mode_request_user_input'), 'strips injected request_user_input');
-    assert.ok(!result.includes(GSD_CODEX_MARKER), 'strips marker');
+    assert.ok(!result.includes(VECTOR_CODEX_MARKER), 'strips marker');
   });
 
   test('removes [agents.vector-*] sections', () => {
     const content = `[agents.vector-executor]\ndescription = "test"\nconfig_file = "agents/vector-executor.toml"\n\n[agents.custom-agent]\ndescription = "user agent"\n`;
-    const result = stripGsdFromCodexConfig(content);
+    const result = stripVectorFromCodexConfig(content);
     assert.ok(!result.includes('[agents.vector-executor]'), 'removes Vector agent section');
     assert.ok(result.includes('[agents.custom-agent]'), 'preserves user agent section');
   });
@@ -301,7 +301,7 @@ describe('mergeCodexConfig', () => {
 
     assert.ok(fs.existsSync(configPath), 'file created');
     const content = fs.readFileSync(configPath, 'utf8');
-    assert.ok(content.includes(GSD_CODEX_MARKER), 'has marker');
+    assert.ok(content.includes(VECTOR_CODEX_MARKER), 'has marker');
     assert.ok(content.includes('[agents.vector-executor]'), 'has agent');
     assert.ok(!content.includes('[features]'), 'no features section');
     assert.ok(!content.includes('multi_agent'), 'no multi_agent');
@@ -324,7 +324,7 @@ describe('mergeCodexConfig', () => {
     assert.ok(content.includes('Updated description'), 'has new description');
     assert.ok(content.includes('[agents.vector-planner]'), 'has new agent');
     // Verify no duplicate markers
-    const markerCount = (content.match(new RegExp(GSD_CODEX_MARKER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
+    const markerCount = (content.match(new RegExp(VECTOR_CODEX_MARKER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
     assert.strictEqual(markerCount, 1, 'exactly one marker');
   });
 
@@ -336,7 +336,7 @@ describe('mergeCodexConfig', () => {
 
     const content = fs.readFileSync(configPath, 'utf8');
     assert.ok(content.includes('[model]'), 'preserves user content');
-    assert.ok(content.includes(GSD_CODEX_MARKER), 'adds marker');
+    assert.ok(content.includes(VECTOR_CODEX_MARKER), 'adds marker');
     assert.ok(content.includes('[agents.vector-executor]'), 'has agent');
   });
 
@@ -350,7 +350,7 @@ describe('mergeCodexConfig', () => {
     assert.ok(content.includes('other_feature = true'), 'preserves existing feature');
     assert.ok(!content.includes('multi_agent'), 'does not inject multi_agent');
     assert.ok(!content.includes('default_mode_request_user_input'), 'does not inject request_user_input');
-    assert.ok(content.includes(GSD_CODEX_MARKER), 'adds marker for agents block');
+    assert.ok(content.includes(VECTOR_CODEX_MARKER), 'adds marker for agents block');
     assert.ok(content.includes('[agents.vector-executor]'), 'has agent');
   });
 
@@ -378,13 +378,13 @@ describe('mergeCodexConfig', () => {
     assert.ok(content.includes('other_feature = true'), 'preserves user feature keys');
     assert.ok(content.includes('[agents.vector-executor]'), 'has agent');
     // Verify no duplicate markers
-    const markerCount = (content.match(new RegExp(GSD_CODEX_MARKER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
+    const markerCount = (content.match(new RegExp(VECTOR_CODEX_MARKER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
     assert.strictEqual(markerCount, 1, 'exactly one marker');
   });
 
   test('case 2 does not inject feature keys', () => {
     const configPath = path.join(tmpDir, 'config.toml');
-    const manualContent = '[features]\nother_feature = true\n\n' + GSD_CODEX_MARKER + '\n[agents.vector-old]\ndescription = "old"\n';
+    const manualContent = '[features]\nother_feature = true\n\n' + VECTOR_CODEX_MARKER + '\n[agents.vector-old]\ndescription = "old"\n';
     fs.writeFileSync(configPath, manualContent);
 
     mergeCodexConfig(configPath, sampleBlock);
@@ -410,7 +410,7 @@ describe('mergeCodexConfig', () => {
       'description = "old"',
       'config_file = "agents/vector-executor.toml"',
       '',
-      GSD_CODEX_MARKER,
+      VECTOR_CODEX_MARKER,
       '',
       '[agents.vector-executor]',
       'description = "Executes plans"',
@@ -425,7 +425,7 @@ describe('mergeCodexConfig', () => {
     assert.ok(content.includes('child_agents_md = false'), 'preserves user feature keys');
     assert.ok(content.includes('[agents.vector-executor]'), 'has agent from fresh block');
     // Verify the leaked [agents] table header above marker was stripped
-    const markerIndex = content.indexOf(GSD_CODEX_MARKER);
+    const markerIndex = content.indexOf(VECTOR_CODEX_MARKER);
     const beforeMarker = content.substring(0, markerIndex);
     assert.ok(!beforeMarker.match(/^\[agents\]\s*$/m), 'no leaked [agents] above marker');
     assert.ok(!beforeMarker.includes('[agents.vector-'), 'no leaked [agents.vector-*] above marker');
@@ -475,7 +475,7 @@ describe('installCodexConfig (integration)', () => {
     const configPath = path.join(tmpTarget, 'config.toml');
     assert.ok(fs.existsSync(configPath), 'config.toml exists');
     const config = fs.readFileSync(configPath, 'utf8');
-    assert.ok(config.includes(GSD_CODEX_MARKER), 'has Vector marker');
+    assert.ok(config.includes(VECTOR_CODEX_MARKER), 'has Vector marker');
     assert.ok(config.includes('[agents.vector-executor]'), 'has executor agent');
     assert.ok(!config.includes('multi_agent'), 'no feature flags');
 

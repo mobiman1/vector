@@ -25,10 +25,10 @@ const {
   convertClaudeCommandToCopilotSkill,
   convertClaudeAgentToCopilotAgent,
   copyCommandsAsCopilotSkills,
-  GSD_COPILOT_INSTRUCTIONS_MARKER,
-  GSD_COPILOT_INSTRUCTIONS_CLOSE_MARKER,
+  VECTOR_COPILOT_INSTRUCTIONS_MARKER,
+  VECTOR_COPILOT_INSTRUCTIONS_CLOSE_MARKER,
   mergeCopilotInstructions,
-  stripGsdFromCopilotInstructions,
+  stripVectorFromCopilotInstructions,
   writeManifest,
   reportLocalPatches,
 } = require('../bin/install.cjs');
@@ -814,7 +814,7 @@ describe('Copilot instructions merge/strip', () => {
   const vectorContent = '- Follow project conventions\n- Use structured workflows';
 
   function makeVectorBlock(content: string) {
-    return GSD_COPILOT_INSTRUCTIONS_MARKER + '\n' + content.trim() + '\n' + GSD_COPILOT_INSTRUCTIONS_CLOSE_MARKER;
+    return VECTOR_COPILOT_INSTRUCTIONS_MARKER + '\n' + content.trim() + '\n' + VECTOR_COPILOT_INSTRUCTIONS_CLOSE_MARKER;
   }
 
   describe('mergeCopilotInstructions', () => {
@@ -834,8 +834,8 @@ describe('Copilot instructions merge/strip', () => {
 
       assert.ok(fs.existsSync(filePath), 'file was created');
       const result = fs.readFileSync(filePath, 'utf8');
-      assert.ok(result.includes(GSD_COPILOT_INSTRUCTIONS_MARKER), 'has opening marker');
-      assert.ok(result.includes(GSD_COPILOT_INSTRUCTIONS_CLOSE_MARKER), 'has closing marker');
+      assert.ok(result.includes(VECTOR_COPILOT_INSTRUCTIONS_MARKER), 'has opening marker');
+      assert.ok(result.includes(VECTOR_COPILOT_INSTRUCTIONS_CLOSE_MARKER), 'has closing marker');
       assert.ok(result.includes('Follow project conventions'), 'has Vector content');
     });
 
@@ -865,10 +865,10 @@ describe('Copilot instructions merge/strip', () => {
 
       assert.ok(result.includes('# My Custom Instructions'), 'original content preserved');
       assert.ok(result.includes('Do things my way.'), 'original text preserved');
-      assert.ok(result.includes(GSD_COPILOT_INSTRUCTIONS_MARKER), 'Vector block appended');
+      assert.ok(result.includes(VECTOR_COPILOT_INSTRUCTIONS_MARKER), 'Vector block appended');
       assert.ok(result.includes('Follow project conventions'), 'Vector content appended');
       // Verify separator exists
-      assert.ok(result.includes('Do things my way.\n\n' + GSD_COPILOT_INSTRUCTIONS_MARKER),
+      assert.ok(result.includes('Do things my way.\n\n' + VECTOR_COPILOT_INSTRUCTIONS_MARKER),
         'double newline separator before Vector block');
     });
 
@@ -883,8 +883,8 @@ describe('Copilot instructions merge/strip', () => {
 
       assert.ok(!result.includes('Old instructions'), 'old content removed');
       assert.ok(result.includes('Updated instructions'), 'new content present');
-      assert.ok(result.includes(GSD_COPILOT_INSTRUCTIONS_MARKER), 'has opening marker');
-      assert.ok(result.includes(GSD_COPILOT_INSTRUCTIONS_CLOSE_MARKER), 'has closing marker');
+      assert.ok(result.includes(VECTOR_COPILOT_INSTRUCTIONS_MARKER), 'has opening marker');
+      assert.ok(result.includes(VECTOR_COPILOT_INSTRUCTIONS_CLOSE_MARKER), 'has closing marker');
     });
 
     test('preserves user content before and after markers', () => {
@@ -902,58 +902,58 @@ describe('Copilot instructions merge/strip', () => {
       assert.ok(result.includes('Follow project conventions'), 'new Vector content between markers');
       // Verify ordering: before → Vector → after
       const setupIdx = result.indexOf('# My Setup');
-      const markerIdx = result.indexOf(GSD_COPILOT_INSTRUCTIONS_MARKER);
+      const markerIdx = result.indexOf(VECTOR_COPILOT_INSTRUCTIONS_MARKER);
       const notesIdx = result.indexOf('# My Notes');
       assert.ok(setupIdx < markerIdx, 'user setup comes before Vector block');
       assert.ok(markerIdx < notesIdx, 'Vector block comes before user notes');
     });
   });
 
-  describe('stripGsdFromCopilotInstructions', () => {
+  describe('stripVectorFromCopilotInstructions', () => {
     test('returns null when content is Vector-only', () => {
       const content = makeVectorBlock('- Vector instructions only') + '\n';
-      const result = stripGsdFromCopilotInstructions(content);
+      const result = stripVectorFromCopilotInstructions(content);
       assert.strictEqual(result, null, 'returns null for Vector-only content');
     });
 
     test('returns cleaned content when user content exists before markers', () => {
       const content = '# My Setup\n\nCustom rules here.\n\n' +
         makeVectorBlock('- Vector stuff') + '\n';
-      const result = stripGsdFromCopilotInstructions(content);
+      const result = stripVectorFromCopilotInstructions(content);
 
       assert.ok(result !== null, 'does not return null');
       assert.ok(result.includes('# My Setup'), 'user content preserved');
       assert.ok(result.includes('Custom rules here.'), 'user text preserved');
-      assert.ok(!result.includes(GSD_COPILOT_INSTRUCTIONS_MARKER), 'opening marker removed');
-      assert.ok(!result.includes(GSD_COPILOT_INSTRUCTIONS_CLOSE_MARKER), 'closing marker removed');
+      assert.ok(!result.includes(VECTOR_COPILOT_INSTRUCTIONS_MARKER), 'opening marker removed');
+      assert.ok(!result.includes(VECTOR_COPILOT_INSTRUCTIONS_CLOSE_MARKER), 'closing marker removed');
       assert.ok(!result.includes('Vector stuff'), 'Vector content removed');
     });
 
     test('returns cleaned content when user content exists after markers', () => {
       const content = makeVectorBlock('- Vector stuff') + '\n\n# My Notes\n\nPersonal notes.\n';
-      const result = stripGsdFromCopilotInstructions(content);
+      const result = stripVectorFromCopilotInstructions(content);
 
       assert.ok(result !== null, 'does not return null');
       assert.ok(result.includes('# My Notes'), 'user content after preserved');
       assert.ok(result.includes('Personal notes.'), 'user text after preserved');
-      assert.ok(!result.includes(GSD_COPILOT_INSTRUCTIONS_MARKER), 'opening marker removed');
+      assert.ok(!result.includes(VECTOR_COPILOT_INSTRUCTIONS_MARKER), 'opening marker removed');
       assert.ok(!result.includes('Vector stuff'), 'Vector content removed');
     });
 
     test('returns cleaned content preserving both before and after', () => {
       const content = '# Before\n\n' + makeVectorBlock('- Vector middle') + '\n\n# After\n';
-      const result = stripGsdFromCopilotInstructions(content);
+      const result = stripVectorFromCopilotInstructions(content);
 
       assert.ok(result !== null, 'does not return null');
       assert.ok(result.includes('# Before'), 'content before preserved');
       assert.ok(result.includes('# After'), 'content after preserved');
       assert.ok(!result.includes('Vector middle'), 'Vector content removed');
-      assert.ok(!result.includes(GSD_COPILOT_INSTRUCTIONS_MARKER), 'markers removed');
+      assert.ok(!result.includes(VECTOR_COPILOT_INSTRUCTIONS_MARKER), 'markers removed');
     });
 
     test('returns original content when no markers found', () => {
       const content = '# Just user content\n\nNo Vector markers here.\n';
-      const result = stripGsdFromCopilotInstructions(content);
+      const result = stripVectorFromCopilotInstructions(content);
       assert.strictEqual(result, content, 'returns content unchanged');
     });
   });
@@ -997,25 +997,25 @@ describe('Copilot uninstall skill removal', () => {
 
   test('cleans Vector section from copilot-instructions.md on uninstall', () => {
     const content = '# My Setup\n\nMy custom rules.\n\n' +
-      GSD_COPILOT_INSTRUCTIONS_MARKER + '\n' +
+      VECTOR_COPILOT_INSTRUCTIONS_MARKER + '\n' +
       '- Vector managed content\n' +
-      GSD_COPILOT_INSTRUCTIONS_CLOSE_MARKER + '\n';
+      VECTOR_COPILOT_INSTRUCTIONS_CLOSE_MARKER + '\n';
 
-    const result = stripGsdFromCopilotInstructions(content);
+    const result = stripVectorFromCopilotInstructions(content);
 
     assert.ok(result !== null, 'does not return null when user content exists');
     assert.ok(result.includes('# My Setup'), 'user content preserved');
     assert.ok(result.includes('My custom rules.'), 'user text preserved');
     assert.ok(!result.includes('Vector managed content'), 'Vector content removed');
-    assert.ok(!result.includes(GSD_COPILOT_INSTRUCTIONS_MARKER), 'markers removed');
+    assert.ok(!result.includes(VECTOR_COPILOT_INSTRUCTIONS_MARKER), 'markers removed');
   });
 
   test('deletes copilot-instructions.md when Vector-only on uninstall', () => {
-    const content = GSD_COPILOT_INSTRUCTIONS_MARKER + '\n' +
+    const content = VECTOR_COPILOT_INSTRUCTIONS_MARKER + '\n' +
       '- Only Vector content\n' +
-      GSD_COPILOT_INSTRUCTIONS_CLOSE_MARKER + '\n';
+      VECTOR_COPILOT_INSTRUCTIONS_CLOSE_MARKER + '\n';
 
-    const result = stripGsdFromCopilotInstructions(content);
+    const result = stripVectorFromCopilotInstructions(content);
 
     assert.strictEqual(result, null, 'returns null signaling file deletion');
   });

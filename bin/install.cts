@@ -20,11 +20,11 @@ const bold = '\x1b[1m';
 const purple = '\x1b[38;5;135m';
 
 // Codex config.toml constants
-const GSD_CODEX_MARKER = '# Vector Agent Configuration \u2014 managed by core installer';
+const VECTOR_CODEX_MARKER = '# Vector Agent Configuration \u2014 managed by core installer';
 
 // Copilot instructions marker constants
-const GSD_COPILOT_INSTRUCTIONS_MARKER = '<!-- Vector Configuration \u2014 managed by core installer -->';
-const GSD_COPILOT_INSTRUCTIONS_CLOSE_MARKER = '<!-- /Vector Configuration -->';
+const VECTOR_COPILOT_INSTRUCTIONS_MARKER = '<!-- Vector Configuration \u2014 managed by core installer -->';
+const VECTOR_COPILOT_INSTRUCTIONS_CLOSE_MARKER = '<!-- /Vector Configuration -->';
 
 const CODEX_AGENT_SANDBOX = {
   'vector-executor': 'workspace-write',
@@ -844,7 +844,7 @@ function generateCodexAgentToml(agentName: string, agentContent: string) {
  */
 function generateCodexConfigBlock(agents: Array<{name: string, description: string}>) {
   const lines = [
-    GSD_CODEX_MARKER,
+    VECTOR_CODEX_MARKER,
     '',
   ];
 
@@ -862,8 +862,8 @@ function generateCodexConfigBlock(agents: Array<{name: string, description: stri
  * Strip Vector sections from Codex config.toml content.
  * Returns cleaned content, or null if file would be empty.
  */
-function stripGsdFromCodexConfig(content: string) {
-  const markerIndex = content.indexOf(GSD_CODEX_MARKER);
+function stripVectorFromCodexConfig(content: string) {
+  const markerIndex = content.indexOf(VECTOR_CODEX_MARKER);
 
   if (markerIndex !== -1) {
     // Has Vector marker — remove everything from marker to EOF
@@ -910,7 +910,7 @@ function mergeCodexConfig(configPath: string, vectorBlock: string) {
   }
 
   const existing = fs.readFileSync(configPath, 'utf8');
-  const markerIndex = existing.indexOf(GSD_CODEX_MARKER);
+  const markerIndex = existing.indexOf(VECTOR_CODEX_MARKER);
 
   // Case 2: Has Vector marker — truncate and re-append
   if (markerIndex !== -1) {
@@ -942,9 +942,9 @@ function mergeCodexConfig(configPath: string, vectorBlock: string) {
  * @param {string} vectorContent - Template content (without markers)
  */
 function mergeCopilotInstructions(filePath: string, vectorContent: string) {
-  const vectorBlock = GSD_COPILOT_INSTRUCTIONS_MARKER + '\n' +
+  const vectorBlock = VECTOR_COPILOT_INSTRUCTIONS_MARKER + '\n' +
     vectorContent.trim() + '\n' +
-    GSD_COPILOT_INSTRUCTIONS_CLOSE_MARKER;
+    VECTOR_COPILOT_INSTRUCTIONS_CLOSE_MARKER;
 
   // Case 1: No file — create fresh
   if (!fs.existsSync(filePath)) {
@@ -953,13 +953,13 @@ function mergeCopilotInstructions(filePath: string, vectorContent: string) {
   }
 
   const existing = fs.readFileSync(filePath, 'utf8');
-  const openIndex = existing.indexOf(GSD_COPILOT_INSTRUCTIONS_MARKER);
-  const closeIndex = existing.indexOf(GSD_COPILOT_INSTRUCTIONS_CLOSE_MARKER);
+  const openIndex = existing.indexOf(VECTOR_COPILOT_INSTRUCTIONS_MARKER);
+  const closeIndex = existing.indexOf(VECTOR_COPILOT_INSTRUCTIONS_CLOSE_MARKER);
 
   // Case 2: Has Vector markers — replace between markers
   if (openIndex !== -1 && closeIndex !== -1) {
     const before = existing.substring(0, openIndex).trimEnd();
-    const after = existing.substring(closeIndex + GSD_COPILOT_INSTRUCTIONS_CLOSE_MARKER.length).trimStart();
+    const after = existing.substring(closeIndex + VECTOR_COPILOT_INSTRUCTIONS_CLOSE_MARKER.length).trimStart();
     let newContent = '';
     if (before) newContent += before + '\n\n';
     newContent += vectorBlock;
@@ -980,13 +980,13 @@ function mergeCopilotInstructions(filePath: string, vectorContent: string) {
  * @param {string} content - File content
  * @returns {string|null} - Cleaned content or null if empty
  */
-function stripGsdFromCopilotInstructions(content: string) {
-  const openIndex = content.indexOf(GSD_COPILOT_INSTRUCTIONS_MARKER);
-  const closeIndex = content.indexOf(GSD_COPILOT_INSTRUCTIONS_CLOSE_MARKER);
+function stripVectorFromCopilotInstructions(content: string) {
+  const openIndex = content.indexOf(VECTOR_COPILOT_INSTRUCTIONS_MARKER);
+  const closeIndex = content.indexOf(VECTOR_COPILOT_INSTRUCTIONS_CLOSE_MARKER);
 
   if (openIndex !== -1 && closeIndex !== -1) {
     const before = content.substring(0, openIndex).trimEnd();
-    const after = content.substring(closeIndex + GSD_COPILOT_INSTRUCTIONS_CLOSE_MARKER.length).trimStart();
+    const after = content.substring(closeIndex + VECTOR_COPILOT_INSTRUCTIONS_CLOSE_MARKER.length).trimStart();
     const cleaned = (before + (before && after ? '\n\n' : '') + after).trim();
     if (!cleaned) return null;
     return cleaned + '\n';
@@ -1009,13 +1009,13 @@ function installCodexConfig(targetDir: string, agentsSrc: string) {
   const agents = [];
 
   // Compute the Codex Vector install path (absolute, so subagents with empty $HOME work — #820)
-  const codexGsdPath = `${path.resolve(targetDir, 'core').replace(/\\/g, '/')}/`;
+  const codexVectorPath = `${path.resolve(targetDir, 'core').replace(/\\/g, '/')}/`;
 
   for (const file of agentEntries) {
     let content = fs.readFileSync(path.join(agentsSrc, file), 'utf8');
     // Replace full .claude/core prefix so path resolves to codex Vector install
-    content = content.replace(/~\/\.claude\/core\//g, codexGsdPath);
-    content = content.replace(/\$HOME\/\.claude\/core\//g, codexGsdPath);
+    content = content.replace(/~\/\.claude\/core\//g, codexVectorPath);
+    content = content.replace(/\$HOME\/\.claude\/core\//g, codexVectorPath);
     const { frontmatter } = extractFrontmatterAndBody(content);
     const name = (frontmatter ? extractFrontmatterField(frontmatter, 'name') : null) || file.replace('.md', '');
     const description = (frontmatter ? extractFrontmatterField(frontmatter, 'description') : null) || '';
@@ -1808,7 +1808,7 @@ function uninstall(isGlobal: boolean, runtime: Runtime = 'claude') {
     const configPath = path.join(targetDir, 'config.toml');
     if (fs.existsSync(configPath)) {
       const content = fs.readFileSync(configPath, 'utf8');
-      const cleaned = stripGsdFromCodexConfig(content);
+      const cleaned = stripVectorFromCodexConfig(content);
       if (cleaned === null) {
         // File is empty after stripping — delete it
         fs.unlinkSync(configPath);
@@ -1842,7 +1842,7 @@ function uninstall(isGlobal: boolean, runtime: Runtime = 'claude') {
     const instructionsPath = path.join(targetDir, 'copilot-instructions.md');
     if (fs.existsSync(instructionsPath)) {
       const content = fs.readFileSync(instructionsPath, 'utf8');
-      const cleaned = stripGsdFromCopilotInstructions(content);
+      const cleaned = stripVectorFromCopilotInstructions(content);
       if (cleaned === null) {
         fs.unlinkSync(instructionsPath);
         removedCount++;
@@ -1961,10 +1961,10 @@ function uninstall(isGlobal: boolean, runtime: Runtime = 'claude') {
         const e = entry as Record<string, unknown>;
         if (e.hooks && Array.isArray(e.hooks)) {
           // Filter out Vector hooks
-          const hasGsdHook = (e.hooks as Record<string, unknown>[]).some((h: Record<string, unknown>) =>
+          const hasVectorHook = (e.hooks as Record<string, unknown>[]).some((h: Record<string, unknown>) =>
             h.command && ((h.command as string).includes('vector-check-update') || (h.command as string).includes('vector-statusline'))
           );
-          return !hasGsdHook;
+          return !hasVectorHook;
         }
         return true;
       });
@@ -1985,10 +1985,10 @@ function uninstall(isGlobal: boolean, runtime: Runtime = 'claude') {
         settingsHooks[eventName] = settingsHooks[eventName].filter(entry => {
           const e = entry as Record<string, unknown>;
           if (e.hooks && Array.isArray(e.hooks)) {
-            const hasGsdHook = (e.hooks as Record<string, unknown>[]).some((h: Record<string, unknown>) =>
+            const hasVectorHook = (e.hooks as Record<string, unknown>[]).some((h: Record<string, unknown>) =>
               h.command && (h.command as string).includes('vector-context-monitor')
             );
-            return !hasGsdHook;
+            return !hasVectorHook;
           }
           return true;
         });
@@ -2752,12 +2752,12 @@ function install(isGlobal: boolean, runtime: Runtime = 'claude') {
       hooksMap.SessionStart = [];
     }
 
-    const hasGsdUpdateHook = hooksMap.SessionStart.some((entry: unknown) => {
+    const hasVectorUpdateHook = hooksMap.SessionStart.some((entry: unknown) => {
       const e = entry as Record<string, unknown>;
       return e.hooks && Array.isArray(e.hooks) && (e.hooks as Record<string, unknown>[]).some((h: Record<string, unknown>) => h.command && (h.command as string).includes('vector-check-update'));
     });
 
-    if (!hasGsdUpdateHook) {
+    if (!hasVectorUpdateHook) {
       hooksMap.SessionStart.push({
         hooks: [
           {
@@ -2836,7 +2836,7 @@ function finishInstall(settingsPath: string | null, settings: Record<string, unk
   console.log(`
   ${green}Done!${reset} Open a blank directory in ${program} and run ${cyan}${command}${reset}.
 
-  ${cyan}Join the community:${reset} https://discord.gg/gsd
+  ${cyan}Join the community:${reset} https://discord.gg/rkU8UTu7dY
 `);
 }
 
@@ -3030,12 +3030,12 @@ if (process.env.VECTOR_TEST_MODE) {
     convertClaudeAgentToCodexAgent,
     generateCodexAgentToml,
     generateCodexConfigBlock,
-    stripGsdFromCodexConfig,
+    stripVectorFromCodexConfig,
     mergeCodexConfig,
     installCodexConfig,
     convertClaudeCommandToCodexSkill,
     convertClaudeToOpencodeFrontmatter,
-    GSD_CODEX_MARKER,
+    VECTOR_CODEX_MARKER,
     CODEX_AGENT_SANDBOX,
     getDirName,
     getGlobalDir,
@@ -3046,10 +3046,10 @@ if (process.env.VECTOR_TEST_MODE) {
     convertClaudeCommandToCopilotSkill,
     convertClaudeAgentToCopilotAgent,
     copyCommandsAsCopilotSkills,
-    GSD_COPILOT_INSTRUCTIONS_MARKER,
-    GSD_COPILOT_INSTRUCTIONS_CLOSE_MARKER,
+    VECTOR_COPILOT_INSTRUCTIONS_MARKER,
+    VECTOR_COPILOT_INSTRUCTIONS_CLOSE_MARKER,
     mergeCopilotInstructions,
-    stripGsdFromCopilotInstructions,
+    stripVectorFromCopilotInstructions,
     convertClaudeToAntigravityContent,
     convertClaudeCommandToAntigravitySkill,
     convertClaudeAgentToAntigravityAgent,

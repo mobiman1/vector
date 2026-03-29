@@ -16,7 +16,7 @@ export const TOOLS_PATH = path.join(__dirname, '..', 'core', 'bin', 'vector-tool
  *   of arguments (shell-bypassed via execFileSync, safe for JSON and dollar signs).
  * @param cwd - Working directory.
  */
-export function runGsdTools(args: string | string[], cwd = process.cwd()) {
+export function runVectorTools(args: string | string[], cwd = process.cwd()) {
   try {
     let result: string;
     if (Array.isArray(args)) {
@@ -44,7 +44,7 @@ export function runGsdTools(args: string | string[], cwd = process.cwd()) {
 }
 
 // Alias for backward compat
-export const runVectorTools = runGsdTools;
+export const runVectorTools = runVectorTools;
 
 // Create temp directory structure
 export function createTempProject() {

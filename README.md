@@ -1,7 +1,11 @@
 <div align="center">
 
 # Vector
-**A meta-prompting and context engineering development system for iOS**
+**A meta-prompting and context engineering development system**
+
+[![npm](https://img.shields.io/npm/v/@mobiman/vector)](https://www.npmjs.com/package/@mobiman/vector)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Discord](https://img.shields.io/discord/rkU8UTu7dY?label=Discord&logo=discord&logoColor=white)](https://discord.gg/rkU8UTu7dY)
 
 ---
 
@@ -113,3 +117,15 @@ The orchestrator never does heavy lifting. It spawns agents, waits, integrates r
 | `/vector:health [--repair]` | Validate `.planning/` directory integrity, auto-repair with `--repair` |
 | `/vector:stats` | Display project statistics — phases, plans, requirements, git metrics |
 
+## Community
+
+- [Discord](https://discord.gg/rkU8UTu7dY) — get help, share what you're building, give feedback
+- [Issues](https://github.com/mobiman1/vector/issues) — bug reports and feature requests
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on submitting bug reports, feature requests, and pull requests.
+
+## License
+
+MIT — see [LICENSE](LICENSE) for details.

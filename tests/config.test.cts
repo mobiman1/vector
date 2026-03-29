@@ -12,7 +12,7 @@ import assert from 'node:assert';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { runGsdTools, createTempProject, cleanup } from './helpers.cjs';
+import { runVectorTools, createTempProject, cleanup } from './helpers.cjs';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -40,7 +40,7 @@ describe('config-ensure-section command', () => {
   });
 
   test('creates config.json with expected structure and types', () => {
-    const result = runGsdTools('config-ensure-section', tmpDir);
+    const result = runVectorTools('config-ensure-section', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error!}`);
 
     const output = JSON.parse(result.output);
@@ -64,12 +64,12 @@ describe('config-ensure-section command', () => {
   });
 
   test('is idempotent — returns already_exists on second call', () => {
-    const first = runGsdTools('config-ensure-section', tmpDir);
+    const first = runVectorTools('config-ensure-section', tmpDir);
     assert.ok(first.success, `First call failed: ${first.error}`);
     const firstOutput = JSON.parse(first.output);
     assert.strictEqual(firstOutput.created, true);
 
-    const second = runGsdTools('config-ensure-section', tmpDir);
+    const second = runVectorTools('config-ensure-section', tmpDir);
     assert.ok(second.success, `Second call failed: ${second.error}`);
     const secondOutput = JSON.parse(second.output);
     assert.strictEqual(secondOutput.created, false);
@@ -96,7 +96,7 @@ describe('config-ensure-section command', () => {
       }
       fs.writeFileSync(braveKeyFile, 'test-key', 'utf-8');
 
-      const result = runGsdTools('config-ensure-section', tmpDir);
+      const result = runVectorTools('config-ensure-section', tmpDir);
       assert.ok(result.success, `Command failed: ${result.error!}`);
 
       const config = readConfig(tmpDir);
@@ -133,7 +133,7 @@ describe('config-ensure-section command', () => {
         commit_docs: false,
       }), 'utf-8');
 
-      const result = runGsdTools('config-ensure-section', tmpDir);
+      const result = runVectorTools('config-ensure-section', tmpDir);
       assert.ok(result.success, `Command failed: ${result.error!}`);
 
       const config = readConfig(tmpDir);
@@ -174,7 +174,7 @@ describe('config-ensure-section command', () => {
         workflow: { research: false },
       }), 'utf-8');
 
-      const result = runGsdTools('config-ensure-section', tmpDir);
+      const result = runVectorTools('config-ensure-section', tmpDir);
       assert.ok(result.success, `Command failed: ${result.error!}`);
 
       const config = readConfig(tmpDir);
@@ -202,7 +202,7 @@ describe('config-set command', () => {
   beforeEach(() => {
     tmpDir = createTempProject();
     // Create initial config
-    runGsdTools('config-ensure-section', tmpDir);
+    runVectorTools('config-ensure-section', tmpDir);
   });
 
   afterEach(() => {
@@ -210,7 +210,7 @@ describe('config-set command', () => {
   });
 
   test('sets a top-level string value', () => {
-    const result = runGsdTools('config-set model_profile quality', tmpDir);
+    const result = runVectorTools('config-set model_profile quality', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error!}`);
 
     const output = JSON.parse(result.output);
@@ -223,7 +223,7 @@ describe('config-set command', () => {
   });
 
   test('coerces true to boolean', () => {
-    const result = runGsdTools('config-set commit_docs true', tmpDir);
+    const result = runVectorTools('config-set commit_docs true', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error!}`);
 
     const config = readConfig(tmpDir);
@@ -232,7 +232,7 @@ describe('config-set command', () => {
   });
 
   test('coerces false to boolean', () => {
-    const result = runGsdTools('config-set commit_docs false', tmpDir);
+    const result = runVectorTools('config-set commit_docs false', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error!}`);
 
     const config = readConfig(tmpDir);
@@ -241,7 +241,7 @@ describe('config-set command', () => {
   });
 
   test('coerces numeric strings to numbers', () => {
-    const result = runGsdTools('config-set granularity 42', tmpDir);
+    const result = runVectorTools('config-set granularity 42', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error!}`);
 
     const config = readConfig(tmpDir);
@@ -250,7 +250,7 @@ describe('config-set command', () => {
   });
 
   test('preserves plain strings', () => {
-    const result = runGsdTools('config-set model_profile hello', tmpDir);
+    const result = runVectorTools('config-set model_profile hello', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error!}`);
 
     const config = readConfig(tmpDir);
@@ -259,7 +259,7 @@ describe('config-set command', () => {
   });
 
   test('sets nested values via dot-notation', () => {
-    const result = runGsdTools('config-set workflow.research false', tmpDir);
+    const result = runVectorTools('config-set workflow.research false', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error!}`);
 
     const config = readConfig(tmpDir);
@@ -270,7 +270,7 @@ describe('config-set command', () => {
     // Start with empty config
     writeConfig(tmpDir, {});
 
-    const result = runGsdTools('config-set workflow.research false', tmpDir);
+    const result = runVectorTools('config-set workflow.research false', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error!}`);
 
     const config = readConfig(tmpDir);
@@ -279,7 +279,7 @@ describe('config-set command', () => {
   });
 
   test('rejects unknown config keys', () => {
-    const result = runGsdTools('config-set workflow.nyquist_validation_enabled false', tmpDir);
+    const result = runVectorTools('config-set workflow.nyquist_validation_enabled false', tmpDir);
     assert.strictEqual(result.success, false);
     assert.ok(
       result.error!.includes('Unknown config key'),
@@ -288,12 +288,12 @@ describe('config-set command', () => {
   });
 
   test('errors when no key path provided', () => {
-    const result = runGsdTools('config-set', tmpDir);
+    const result = runVectorTools('config-set', tmpDir);
     assert.strictEqual(result.success, false);
   });
 
   test('rejects known invalid nyquist alias keys with a suggestion', () => {
-    const result = runGsdTools('config-set workflow.nyquist_validation_enabled false', tmpDir);
+    const result = runVectorTools('config-set workflow.nyquist_validation_enabled false', tmpDir);
     assert.strictEqual(result.success, false);
     assert.match(result.error!, /Unknown config key: workflow\.nyquist_validation_enabled/);
     assert.match(result.error!, /workflow\.nyquist_validation/);
@@ -312,7 +312,7 @@ describe('config-get command', () => {
   beforeEach(() => {
     tmpDir = createTempProject();
     // Create config with known values
-    runGsdTools('config-ensure-section', tmpDir);
+    runVectorTools('config-ensure-section', tmpDir);
   });
 
   afterEach(() => {
@@ -320,7 +320,7 @@ describe('config-get command', () => {
   });
 
   test('gets a top-level value', () => {
-    const result = runGsdTools('config-get model_profile', tmpDir);
+    const result = runVectorTools('config-get model_profile', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error!}`);
 
     const output = JSON.parse(result.output);
@@ -328,7 +328,7 @@ describe('config-get command', () => {
   });
 
   test('gets a nested value via dot-notation', () => {
-    const result = runGsdTools('config-get workflow.research', tmpDir);
+    const result = runVectorTools('config-get workflow.research', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error!}`);
 
     const output = JSON.parse(result.output);
@@ -336,7 +336,7 @@ describe('config-get command', () => {
   });
 
   test('errors for nonexistent key', () => {
-    const result = runGsdTools('config-get nonexistent_key', tmpDir);
+    const result = runVectorTools('config-get nonexistent_key', tmpDir);
     assert.strictEqual(result.success, false);
     assert.ok(
       result.error!.includes('Key not found'),
@@ -345,7 +345,7 @@ describe('config-get command', () => {
   });
 
   test('errors for deeply nested nonexistent key', () => {
-    const result = runGsdTools('config-get workflow.nonexistent', tmpDir);
+    const result = runVectorTools('config-get workflow.nonexistent', tmpDir);
     assert.strictEqual(result.success, false);
     assert.ok(
       result.error!.includes('Key not found'),
@@ -356,7 +356,7 @@ describe('config-get command', () => {
   test('errors when config.json does not exist', () => {
     const emptyTmpDir = createTempProject();
     try {
-      const result = runGsdTools('config-get model_profile', emptyTmpDir);
+      const result = runVectorTools('config-get model_profile', emptyTmpDir);
       assert.strictEqual(result.success, false);
       assert.ok(
         result.error!.includes('No config.json'),
@@ -368,7 +368,7 @@ describe('config-get command', () => {
   });
 
   test('errors when no key path provided', () => {
-    const result = runGsdTools('config-get', tmpDir);
+    const result = runVectorTools('config-get', tmpDir);
     assert.strictEqual(result.success, false);
   });
 });

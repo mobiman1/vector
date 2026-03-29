@@ -12,7 +12,7 @@ import { test, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import fs from 'fs';
 import path from 'path';
-import { runGsdTools, createTempProject, cleanup } from './helpers.cjs';
+import { runVectorTools, createTempProject, cleanup } from './helpers.cjs';
 
 const COMMANDS_DIR = path.join(__dirname, '..', 'commands', 'vector');
 const WORKFLOWS_DIR = path.join(__dirname, '..', 'core', 'workflows');
@@ -171,7 +171,7 @@ describe('quick task: research file in task directory', () => {
   });
 
   test('init quick returns valid task_dir for research file placement', () => {
-    const result = runGsdTools('init quick "Add caching layer"', tmpDir);
+    const result = runVectorTools('init quick "Add caching layer"', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
 
     const output = JSON.parse(result.output);
@@ -199,7 +199,7 @@ describe('quick task: research file in task directory', () => {
       '# Research\n\nFindings for test task.\n'
     );
 
-    const result = runGsdTools(
+    const result = runVectorTools(
       'verify-path-exists .planning/quick/1-test-task/1-RESEARCH.md',
       tmpDir
     );
@@ -214,7 +214,7 @@ describe('quick task: research file in task directory', () => {
     const quickTaskDir = path.join(tmpDir, '.planning', 'quick', '1-test-task');
     fs.mkdirSync(quickTaskDir, { recursive: true });
 
-    const result = runGsdTools(
+    const result = runVectorTools(
       'verify-path-exists .planning/quick/1-test-task/1-RESEARCH.md',
       tmpDir
     );
@@ -241,7 +241,7 @@ describe('quick task: research file in task directory', () => {
     }
 
     for (const artifact of artifacts) {
-      const result = runGsdTools(
+      const result = runVectorTools(
         `verify-path-exists .planning/quick/1-add-caching/${artifact}`,
         tmpDir
       );
