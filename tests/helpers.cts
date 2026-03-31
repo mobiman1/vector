@@ -43,9 +43,6 @@ export function runVectorTools(args: string | string[], cwd = process.cwd()) {
   }
 }
 
-// Alias for backward compat
-export const runVectorTools = runVectorTools;
-
 // Create temp directory structure
 export function createTempProject() {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vector-test-'));
